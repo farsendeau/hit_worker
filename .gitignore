@@ -14,7 +14,7 @@ compile_commands.json
 *.exe
 *.out
 *.app
-Moteur2d
+hit_worker
 
 # Object files
 *.o
@@ -36,3 +36,7 @@ Thumbs.db
 
 # Allegro build
 allegro_build/
+
+# Assets
+asset/
+font/

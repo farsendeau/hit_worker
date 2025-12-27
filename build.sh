@@ -17,7 +17,7 @@ cmake --build build -j$(nproc)
 
 echo ""
 echo "=== Compilation terminée ==="
-echo "Exécutable disponible : ./bin/Moteur2d"
+echo "Exécutable disponible : ./bin/hit_worker"
 echo ""
 echo "Pour lancer le programme :"
-echo "  LD_LIBRARY_PATH=$HOME/allegro/lib ./bin/Moteur2d"
+echo "  LD_LIBRARY_PATH=$HOME/allegro/lib ./bin/hit_worker"
