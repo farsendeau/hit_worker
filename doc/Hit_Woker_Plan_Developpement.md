@@ -15,6 +15,11 @@ Hit Woker, un platformer 2D de type Mega Man développé en C++ avec
 Allegro 5. Le plan est structuré de manière progressive, en commençant
 par les fondations techniques avant d\'aborder la création du contenu.
 
+**📚 Note :** Ce document est le plan général. Pour des guides d'implémentation détaillés (avec code complet et schémas), consultez :
+- **[ajout_nouvel_etat.md](ajout_nouvel_etat.md)** - Créer de nouveaux états
+- **[guide_hitwoker_tiled.md](guide_hitwoker_tiled.md)** - Système TileMap avec hitwoker_tiled
+- **[README.md](README.md)** - Index de toute la documentation
+
 Contexte du projet
 
 -   **Résolution :** 320×192px (20×12 tuiles de 16×16px)
@@ -193,23 +198,43 @@ Créez une configuration simple pour tester tous les cas :
 
 2.2 Système de TileMap
 
-Implémentez le chargement et le rendu des tiles :
+**🔧 OUTIL RECOMMANDÉ :** Utilisez **hitwoker_tiled** pour générer automatiquement les données de map !
 
-Structure de données
+**📖 GUIDE COMPLET :** [guide_hitwoker_tiled.md](guide_hitwoker_tiled.md)
+
+Utilisez l'outil `hitwoker_tiled` pour générer du code C++ optimisé à partir de vos fichiers TMX :
+
+**Workflow :**
+1. Créer la map dans Tiled (60×12 tiles, 3 couches : background, solid, kill)
+2. Générer le code :
+   ```bash
+   ~/hit_woker_tiled/hitwoker_tiled maps/level1.tmx > include/level/Level1Data.h
+   ```
+3. Inclure dans votre projet :
+   ```cpp
+   #include "level/Level1Data.h"
+   ```
+
+**Avantages :**
+- ✅ Pas de parsing XML au runtime (chargement instantané)
+- ✅ Compression automatique par blocs 2×2 (~23% économie mémoire)
+- ✅ Code optimisé (lookup tables O(1), fonctions inline)
+- ✅ Prêt à compiler (copier-coller direct)
+
+**Code généré :**
 
 ```cpp
-class TileMap {
-private:
-    int width, height;
-    int tileWidth, tileHeight;
-    std::vector<int> tiles; // Types de tiles
-    ALLEGRO_BITMAP* tileset;
+// Données compressées
+const uint8_t dataBlockVisual[N][4] = {...};  // Blocs 2×2
+const uint8_t dataMapVisual[M] = {...};       // Références aux blocs
+const uint8_t solidTiles[X] = {...};          // IDs tiles solides
+const uint8_t killTiles[Y] = {...};           // IDs tiles mortelles
 
-public:
-    void load(const char* filename);
-    void render(Camera& cam);
-    [[nodiscard]] int getTileType(int x, int y) const;
-};
+// Fonctions helper prêtes à l'emploi
+inline uint8_t getVisualTileAt(int x, int y);
+inline bool isSolidAt(int x, int y);
+inline bool isKillAt(int x, int y);
+void renderMap(int cameraX, int cameraY);
 ```
 
 Types de tiles (selon GDD)
@@ -680,11 +705,33 @@ Phase 7 : Level Design Final
 
 7.1 Création du niveau complet dans Tiled
 
-12. Nouvelle map : 320×12 tiles (16 écrans × 20 tiles)
+1. **Créer la map** : 320×12 tiles (16 écrans × 20 tiles)
+   - Fichier → Nouveau → Carte
+   - Largeur : 320 tiles
+   - Hauteur : 12 tiles
+   - Taille tile : 16×16px
 
-13. Importer vos tilesets Mega Man X ou créer les vôtres
+2. **Créer les 3 couches** :
+   - `background` : Décor visuel
+   - `solid` : Blocs de collision
+   - `kill` : Zones mortelles
 
-14. Intégrer votre système de compression metatiles
+3. **Importer le tileset** :
+   - Mega Man X inspiré ou créer le vôtre
+   - Tile 0 : Vide/Air
+   - Tiles 1-3 : Solides (sol, murs, plateformes)
+   - Tile 4 : Mortelle (piques, lave)
+
+4. **Dessiner le niveau** selon la structure 11.3
+
+5. **Sauvegarder** : `maps/level_final.tmx`
+
+6. **Générer le code avec hitwoker_tiled** :
+   ```bash
+   ~/hit_woker_tiled/hitwoker_tiled maps/level_final.tmx > include/level/LevelFinalData.h
+   ```
+
+   ✅ Le système de compression metatiles 2×2 est appliqué automatiquement !
 
 7.2 Structure selon GDD Section 11.3
 
@@ -865,7 +912,19 @@ Outils de développement
 
 -   **Allegro 5 :** Framework
 
+-   **hitwoker_tiled :** Outil de génération de code C++ à partir de fichiers TMX (voir [guide_hitwoker_tiled.md](guide_hitwoker_tiled.md))
+
 -   **Git :** Contrôle de version (recommandé)
+
+Guides techniques disponibles
+
+-   **[ajout_nouvel_etat.md](ajout_nouvel_etat.md)** - Comment créer de nouveaux états (menus, écrans)
+
+-   **[guide_hitwoker_tiled.md](guide_hitwoker_tiled.md)** - Guide d'utilisation de hitwoker_tiled pour générer les maps
+
+-   **[schema_compression_2d.md](schema_compression_2d.md)** - Système de compression metatiles 2×2 (optionnel)
+
+-   **[README.md](README.md)** - Index de toute la documentation
 
 Configuration de compilation (CMakeLists.txt exemple)
 
