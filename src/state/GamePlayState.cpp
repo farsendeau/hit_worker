@@ -4,6 +4,9 @@ GamePlayState::GamePlayState()
 {
     std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
     setTileset(filename);
+
+    DEBUG_LOG("GamePlayState initialized\n");
+    DEBUG_LOG("Level: %d\n", currentLevel);
 }
 
 GamePlayState::~GamePlayState()
@@ -19,6 +22,7 @@ void GamePlayState::update()
     // Test: déplacer la caméra manuellement
     if (al_key_down(&keyState, ALLEGRO_KEY_RIGHT)) {
         camera.setX(camera.getX() + 2.0f);
+        //DEBUG_LOG("Camera moved RIGHT -> X: %.0f\n", camera.getX());
     }
     if (al_key_down(&keyState, ALLEGRO_KEY_LEFT)) {
         camera.setX(camera.getX() - 2.0f);
@@ -68,6 +72,23 @@ void GamePlayState::render()
             );
         }
     }
+
+    // Dessiner la grille de débogage
+    #ifdef DEBUG
+        ALLEGRO_COLOR gridColor = al_map_rgba(139, 69, 19, 10);  // Marron semi-transparent
+
+        // Lignes verticales
+        for (int x = startX; x <= endX; x++) {
+            int screenX = x * TILE_SIZE - static_cast<int>(camera.getX());
+            al_draw_line(screenX, 0, screenX, 192, gridColor, 1.0f);
+        }
+
+        // Lignes horizontales
+        for (int y = startY; y <= endY; y++) {
+            int screenY = y * TILE_SIZE - static_cast<int>(camera.getY());
+            al_draw_line(0, screenY, 320, screenY, gridColor, 1.0f);
+        }
+    #endif
 }
 
 void GamePlayState::handleInput()
