@@ -1,6 +1,6 @@
 #include "core/Game.hpp"
 #include "state/MenuState.hpp"
-
+#include "state/GamePlayState.hpp" // TODO à supprimer après les tests
 
 Game::Game()
 {
@@ -30,6 +30,10 @@ bool Game::init()
     }
 
     if (!al_init_image_addon()) {
+        return false;
+    }
+
+    if (!al_init_native_dialog_addon) {
         return false;
     }
 
@@ -75,7 +79,9 @@ bool Game::init()
     running = true;
 
     // Démarre avec le menu
-    stateManager.change(new MenuState());
+    // TODO remettre MenuState après les tests
+    //stateManager.change(new MenuState());
+    stateManager.change(new GamePlayState);
 
     return true;
 }
