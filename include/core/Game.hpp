@@ -6,8 +6,6 @@
 
 class Game
 {
-    // TODO les fonction render() et handleInput() sont a déplacer dans les Classe de states (ex MenuState.cpp) 
-
     private:
         //==== Attribut Private ====
         // Allegro conmponents
@@ -22,6 +20,11 @@ class Game
         int screenHeight{};
         // states
         StateManager stateManager;
+
+        #ifdef DEBUG
+                // Debug logging
+                ALLEGRO_TEXTLOG* debugLog{nullptr};
+        #endif
 
         // État des inputs (pour le gameplay)
         struct InputState {

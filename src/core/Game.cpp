@@ -2,6 +2,11 @@
 #include "state/MenuState.hpp"
 #include "state/GamePlayState.hpp" // TODO à supprimer après les tests
 
+#ifdef DEBUG
+// Définition de la variable globale pour le debug log
+ALLEGRO_TEXTLOG* g_debugLog = nullptr;
+#endif
+
 Game::Game()
 {
 }
@@ -9,6 +14,13 @@ Game::Game()
 Game::~Game()
 {
     // Nettoyage dans l'ordre inverse de création
+#ifdef DEBUG
+    if (debugLog) {
+        g_debugLog = nullptr;  // Invalider le pointeur global
+        al_close_native_text_log(debugLog);
+        debugLog = nullptr;
+    }
+#endif
     if (timer) al_destroy_timer(timer);
     if (eventQueue) al_destroy_event_queue(eventQueue);
     if (virtualBuffer) al_destroy_bitmap(virtualBuffer);
@@ -33,7 +45,7 @@ bool Game::init()
         return false;
     }
 
-    if (!al_init_native_dialog_addon) {
+    if (!al_init_native_dialog_addon()) {
         return false;
     }
 
@@ -82,6 +94,18 @@ bool Game::init()
     // TODO remettre MenuState après les tests
     //stateManager.change(new MenuState());
     stateManager.change(new GamePlayState);
+
+#ifdef DEBUG
+    // Ouvrir la fenêtre de log debug
+    debugLog = al_open_native_text_log("Hit Worker - Debug Log", ALLEGRO_TEXTLOG_MONOSPACE);
+    g_debugLog = debugLog;  // Exposer le log globalement
+    if (debugLog) {
+        al_append_native_text_log(debugLog, "=== DEBUG MODE ACTIVATED ===\n");
+        al_append_native_text_log(debugLog, "Compiled with -DDEBUG flag\n");
+        al_append_native_text_log(debugLog, "Virtual resolution: 320x192\n");
+        al_append_native_text_log(debugLog, "\n");
+    }
+#endif
 
     return true;
 }

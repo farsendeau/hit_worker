@@ -59,11 +59,20 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 # Option pour compilation statique
 option(BUILD_STATIC "Build with static libraries" OFF)
 
+# Option pour activer le mode debug avec TEXTLOG
+option(DEBUG_LOG "Enable debug logging with ALLEGRO_TEXTLOG" ON)
+
 if(BUILD_STATIC)
     # Forcer la liaison statique
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
     set(BUILD_SHARED_LIBS OFF)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+endif()
+
+if(DEBUG_LOG)
+    # Ajouter le flag -DDEBUG pour activer le mode debug
+    add_definitions(-DDEBUG)
+    message(STATUS "Debug logging ENABLED")
 endif()
 
 # Créer l'exécutable
