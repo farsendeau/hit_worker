@@ -2,7 +2,7 @@
 
 **Index complet de la documentation du projet**
 
-**Dernière mise à jour :** 28 décembre 2024
+**Dernière mise à jour :** 30 décembre 2024
 
 ---
 
@@ -10,6 +10,7 @@
 
 - [Documents principaux](#documents-principaux)
 - [Guides techniques](#guides-techniques)
+- [Développement](#développement)
 - [Outils](#outils)
 - [Rapports et tests](#rapports-et-tests)
 - [Quick Start](#quick-start)
@@ -127,6 +128,122 @@
 
 ---
 
+## 🛠️ Développement
+
+### 🐛 Mode Debug avec ALLEGRO_TEXTLOG
+
+**Ce que c'est :** Système de logging en temps réel via fenêtre native ALLEGRO_TEXTLOG.
+
+**Utilisez-le pour :**
+- Debugger les mouvements (caméra, joueur, ennemis)
+- Tracer les événements (collisions, changements d'état)
+- Afficher des valeurs en temps réel sans interrompre le jeu
+- Logger les informations de performance
+
+**Comment l'activer :**
+
+Modifiez la ligne 63 de [CMakeLists.txt](../CMakeLists.txt#L63) :
+
+```cmake
+# Pour ACTIVER le mode debug
+option(DEBUG_LOG "Enable debug logging with ALLEGRO_TEXTLOG" ON)
+
+# Pour DÉSACTIVER le mode debug
+option(DEBUG_LOG "Enable debug logging with ALLEGRO_TEXTLOG" OFF)
+```
+
+Puis compilez avec **F5** (VSCode) ou en ligne de commande :
+
+```bash
+cd build
+cmake ..
+make
+```
+
+**Note :** Grâce à l'option `--fresh` dans [.vscode/tasks.json](../.vscode/tasks.json#L9), le changement est automatiquement détecté à chaque compilation F5.
+
+**Workflow VSCode (Recommandé) :**
+1. Ouvrez [CMakeLists.txt](../CMakeLists.txt#L63)
+2. Changez `OFF` → `ON` (ou inversement)
+3. Appuyez sur **F5**
+4. Le mode debug est automatiquement appliqué
+
+**Quand activé :**
+- Une fenêtre "Hit Worker - Debug Log" s'ouvre automatiquement au démarrage
+- La fenêtre reste ouverte pendant l'exécution
+- Tous les appels à `DEBUG_LOG()` s'affichent dans cette fenêtre
+- La fenêtre se ferme automatiquement à la fin du jeu
+
+**Comment l'utiliser dans le code :**
+
+```cpp
+// Dans n'importe quel fichier .cpp (constant.h est déjà inclus via Game.hpp)
+
+// Log simple
+DEBUG_LOG("Player jumped!\n");
+
+// Log avec variables (format printf)
+DEBUG_LOG("Player position: %d, %d\n", player.x, player.y);
+DEBUG_LOG("Camera X: %.2f\n", camera.getX());
+DEBUG_LOG("Enemy HP: %d/%d\n", enemy.hp, enemy.maxHp);
+
+// Log conditionnel
+if (collision) {
+    DEBUG_LOG("Collision detected at tile (%d, %d)\n", tileX, tileY);
+}
+
+// En mode release (sans -DDEBUG_LOG=ON), ces appels ne font RIEN
+// → Aucun impact sur les performances
+```
+
+**Exemples d'utilisation :**
+
+```cpp
+// GamePlayState.cpp - Logger les événements de gameplay
+void GamePlayState::update() {
+    if (playerJumped) {
+        DEBUG_LOG("Jump! velocity: %.2f\n", player.velocityY);
+    }
+
+    if (playerHit) {
+        DEBUG_LOG("Player hit! HP: %d -> %d\n", oldHp, player.hp);
+    }
+}
+
+// EntityManager.cpp - Logger la création d'entités
+void EntityManager::spawn(EntityType type) {
+    DEBUG_LOG("Spawning entity type %d at (%.0f, %.0f)\n",
+              type, spawnX, spawnY);
+}
+
+// CollisionSystem.cpp - Tracer les collisions
+if (checkCollision(player, enemy)) {
+    DEBUG_LOG("Collision: Player <-> Enemy #%d\n", enemy.id);
+}
+```
+
+**Points clés :**
+- ✅ **Zéro overhead en release** : En compilation normale, `DEBUG_LOG()` est une macro vide
+- ✅ **Thread-safe** : Utilise ALLEGRO_TEXTLOG natif
+- ✅ **Format flexible** : Support complet de `printf` (format, ...)
+- ✅ **Accessible partout** : Variable globale `g_debugLog`
+- ✅ **Pas de popup bloquant** : La fenêtre ne bloque pas le jeu
+
+**Limites :**
+- Buffer de 512 caractères par message (ajustable dans [constant.h:42](../include/utils/constant.h#L42))
+- Mode debug activé à la **compilation** (changez `ON`/`OFF` dans CMakeLists.txt + F5 pour basculer)
+
+**Fichiers concernés :**
+- [CMakeLists.txt:63](../CMakeLists.txt#L63) - Option `DEBUG_LOG` (ON/OFF)
+- [.vscode/tasks.json:9](../.vscode/tasks.json#L9) - Option `--fresh` pour auto-détection
+- [constant.h:34-50](../include/utils/constant.h#L34-L50) - Macro `DEBUG_LOG()`
+- [Game.cpp:5-8](../src/core/Game.cpp#L5-L8) - Variable globale `g_debugLog`
+- [Game.cpp:86-96](../src/core/Game.cpp#L86-L96) - Initialisation du TEXTLOG
+
+**Astuce :** Laissez les appels `DEBUG_LOG()` dans le code même après debug. En mode release, ils sont automatiquement supprimés par le préprocesseur.
+
+---
+
 ## Outils
 
 ### 🔧 hitwoker_tiled
@@ -230,6 +347,7 @@
 | **Comprendre le gameplay** | [GDD](Hit_Worker_GDD.md) |
 | **Planifier le développement** | [Plan de développement](Hit_Woker_Plan_Developpement.md) |
 | **Créer une map** | [Guide hitwoker_tiled](guide_hitwoker_tiled.md) |
+| **Debugger le code** | [Mode Debug](#-mode-debug-avec-allegro_textlog) |
 | **Ajouter un menu** | [Ajout nouvel état](ajout_nouvel_etat.md) |
 | **Comprendre la compression** | [Schéma compression 2D](schema_compression_2d.md) |
 | **Résoudre un bug** | [Test hitwoker_tiled](test_hitwoker_tiled.md) ou [Correction GID](correction_gid_bug.md) |
@@ -291,6 +409,7 @@ include/level/
 
 | Version | Date | Description |
 |---------|------|-------------|
+| **2.2** | 2024-12-30 | Mode Debug avec ALLEGRO_TEXTLOG |
 | **2.1** | 2024-12-28 | hitwoker_tiled + correction GID |
 | **2.0** | 2024-12-27 | Ajout compression 2D |
 | **1.0** | 2024-12-XX | Version initiale |
