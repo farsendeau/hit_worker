@@ -5,6 +5,8 @@
 #include "../core/AbstractState.hpp"
 #include "../level/level1Data.h"
 #include "../level/Camera.hpp"
+#include "../level/Level.hpp"
+#include "../entity/Player.hpp"
 
 class GamePlayState: public AbstractState
 {
@@ -17,6 +19,9 @@ class GamePlayState: public AbstractState
         static constexpr int MAP_HEIGHT_TILES = 12;
          // Caméra
         Camera camera;
+        // Level et Player
+        Level level;
+        Player player{32.0f, 128.0f};  // Position de départ (2 tiles à droite, 8 tiles en bas)
     public:
         GamePlayState();
         ~GamePlayState();

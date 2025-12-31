@@ -73,6 +73,9 @@ void GamePlayState::render()
         }
     }
 
+    // Dessiner le joueur
+    player.render(camera.getX(), camera.getY());
+
     // Dessiner la grille de débogage
     #ifdef DEBUG
         ALLEGRO_COLOR gridColor = al_map_rgba(139, 69, 19, 10);  // Marron semi-transparent
