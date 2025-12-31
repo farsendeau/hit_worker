@@ -4,10 +4,10 @@
 #include <array>
 #include "entity/Entity.hpp"
 #include "utils/constant.h"
+#include "utils/InputState.hpp"
 
 // Forward declarations 
 class Level;
-struct InputState;
 
 class Player: public Entity
 {

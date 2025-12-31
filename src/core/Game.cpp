@@ -115,7 +115,6 @@ bool Game::init()
 void Game::handleInput()
 {
     ALLEGRO_EVENT event;
-
     // ATTENDRE un événement (bloquant) pour éviter de surcharger le CPU
     al_wait_for_event(eventQueue, &event);
 
@@ -137,8 +136,18 @@ void Game::handleInput()
         }
     } while (al_get_next_event(eventQueue, &event));
 
-    // TODO: Capturer l'état du clavier pour les contrôles du joueur
-    // Voir Phase 3.2 du plan de développement
+    ALLEGRO_KEYBOARD_STATE keyState;
+    al_get_keyboard_state(&keyState);
+    inputState.left = al_key_down(&keyState, ALLEGRO_KEY_Q);
+    inputState.right = al_key_down(&keyState, ALLEGRO_KEY_D);
+    inputState.up = al_key_down(&keyState, ALLEGRO_KEY_Z);
+    inputState.down = al_key_down(&keyState, ALLEGRO_KEY_S);
+    inputState.jump = al_key_down(&keyState, ALLEGRO_KEY_J);
+    inputState.attack = al_key_down(&keyState, ALLEGRO_KEY_H);
+    inputState.weaponSwitch = al_key_down(&keyState, ALLEGRO_KEY_F);
+    inputState.pause = al_key_down(&keyState, ALLEGRO_KEY_G);
+
+    // ici mettre en place une manete
 }
 
 void Game::render()
@@ -212,7 +221,7 @@ void Game::run()
         // Fixed timestep
         while (accumulator >= FRAME_TIME) {
             handleInput();
-            stateManager.update();
+            stateManager.update(inputState);
             accumulator -= FRAME_TIME;
         }
 
