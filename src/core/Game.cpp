@@ -49,14 +49,16 @@ bool Game::init()
         return false;
     }
 
-    // Obtenir la résolution du moniteur
+    // Obtenir la résolution de l'écran préféré
     ALLEGRO_MONITOR_INFO info;
-    al_get_monitor_info(0, &info);
+    al_get_monitor_info(PREFERRED_MONITOR, &info);
     int screen_w = info.x2 - info.x1;
     int screen_h = info.y2 - info.y1;
 
     // PLEIN ÉCRAN avec la résolution native
     al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+    // Forcer l'affichage sur l'écran préféré
+    al_set_new_display_adapter(PREFERRED_MONITOR);
     display = al_create_display(screen_w, screen_h);
     if (!display) {
         return false;
@@ -181,16 +183,15 @@ void Game::render()
         0              // pas de flip
     );
 
-    // debug
-    // DEBUG: Cadre vert pour visualiser la zone de rendu
-    al_draw_rectangle(
-        destX, destY,                          // Coin haut-gauche
-        destX + destWidth, destY + destHeight, // Coin bas-droit
-        al_map_rgb(0, 255, 0),                 // Vert vif
-        3                                       // Épaisseur 3 pixels
-    );
-    // Fin debug
-
+    #ifdef DEBUG
+        // DEBUG: Cadre vert pour visualiser la zone de rendu
+        al_draw_rectangle(
+            destX, destY,                          // Coin haut-gauche
+            destX + destWidth, destY + destHeight, // Coin bas-droit
+            al_map_rgb(0, 255, 0),                 // Vert vif
+            3                                       // Épaisseur 3 pixels
+        );
+    #endif
 
     // 4. Affichage
     al_flip_display();

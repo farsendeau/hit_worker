@@ -17,6 +17,9 @@
 constexpr int VIRTUAL_WIDTH{320};
 constexpr int VIRTUAL_HEIGHT{192};
 
+// Écran préféré (0 = premier écran, 1 = deuxième écran, etc.)
+constexpr int PREFERRED_MONITOR{1};
+
 // Niveau
 constexpr int LEVEL_WIDTH{320 * 16};  // 5120px
 constexpr int SCREENS_PER_LEVEL{16};
@@ -29,6 +32,15 @@ constexpr int INVINCIBILITY_FRAMES{30};
 // Joueur
 constexpr int PLAYER_START_LIVES{4};
 constexpr int MAX_AMMO{255};  // Limite 1 octet
+constexpr float PLAYER_WALK_SPEED{2.0f};
+constexpr float PLAYER_JUMP_VELOCITY{-6.0f};
+constexpr float PLAYER_GRAVITY{0.4f};
+constexpr float PLAYER_MAX_FALL_SPEED{8.0f};
+constexpr float PLAYER_CLIMB_SPEED{1.5f};
+constexpr float PLAYER_HITBOX_WIDTH{14.0f}; // Changer si la largeur du perso change
+constexpr float PLAYER_HITBOX_HEIGHT{28.0f}; // changer si la hauteur du perso change
+constexpr float PLAYER_WIDTH{16.0f};
+constexpr float PLAYER_HEIGHT{32.0f};
 
 // ========== DEBUG ==========
 #ifdef DEBUG

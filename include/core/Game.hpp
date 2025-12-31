@@ -26,6 +26,10 @@ class Game
                 ALLEGRO_TEXTLOG* debugLog{nullptr};
         #endif
 
+        //==== Fonction Private====
+        void render();
+
+    public:
         // État des inputs (pour le gameplay)
         struct InputState {
             bool left{false};
@@ -38,10 +42,6 @@ class Game
             bool pause{false};
         } inputState;
 
-        //==== Fonction Private====
-        void render();
-
-    public:
         //==== Fonction Public====
         Game();
         ~Game();
