@@ -174,6 +174,16 @@ make
 - Tous les appels à `DEBUG_LOG()` s'affichent dans cette fenêtre
 - La fenêtre se ferme automatiquement à la fin du jeu
 
+**💡 Ajouter un log dans la fenêtre de debug :**
+
+Pour afficher un message dans la fenêtre de debug, utilisez simplement la macro `DEBUG_LOG()` :
+
+```cpp
+DEBUG_LOG("Camera moved RIGHT -> X: %.0f\n", camera.getX());
+```
+
+Cette macro fonctionne exactement comme `printf()` et supporte tous les formats standards (%d, %f, %s, etc.).
+
 **Comment l'utiliser dans le code :**
 
 ```cpp

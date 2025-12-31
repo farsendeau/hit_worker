@@ -23,10 +23,10 @@ void StateManager::change(AbstractState *state)
     states.push_back(std::unique_ptr<AbstractState>(state));
 }
 
-void StateManager::update()
+void StateManager::update(const InputState &input)
 {  
     if (!states.empty()) {
-        states.back()->update(); // Accède au dessus de la pile (dernier élément)
+        states.back()->update(input); // Accède au dessus de la pile (dernier élément)
     }
 }
 

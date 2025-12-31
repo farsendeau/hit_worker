@@ -5,6 +5,7 @@
 #include <memory>
 #include <stack>
 #include "AbstractState.hpp"
+#include "../utils/InputState.hpp"
 
 class StateManager
 {
@@ -21,7 +22,7 @@ class StateManager
         void change(AbstractState *state);
 
         // Delegue els call à l'état actif (selui du dessus)
-        void update();
+        void update(const InputState& input);
         void render();
         void handleInput();
 

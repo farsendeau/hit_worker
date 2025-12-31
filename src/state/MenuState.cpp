@@ -1,4 +1,5 @@
 #include "state/MenuState.hpp"
+#include "utils/InputState.hpp"
 
 MenuState::MenuState()
 {
@@ -7,8 +8,11 @@ MenuState::~MenuState()
 {
 }
 
-void MenuState::update()
+void MenuState::update(const InputState& input)
 {
+    // Pour l'instant, ne rien faire avec input
+    // TODO Phase 6 : Implémenter navigation menu avec input.up/down/attack
+    (void) input;  // Évite le warning "unused parameter"
 }
 
 void MenuState::render()

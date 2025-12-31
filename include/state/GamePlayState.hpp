@@ -25,7 +25,7 @@ class GamePlayState: public AbstractState
     public:
         GamePlayState();
         ~GamePlayState();
-        virtual void update();
+        virtual void update(const InputState &input);
         virtual void render();
         virtual void handleInput();
         int getCurrentLevel();

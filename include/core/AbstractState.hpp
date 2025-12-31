@@ -2,6 +2,7 @@
 #define ABSTRACT_STATE_HPP
 
 #include "../utils/constant.h"
+#include "../utils/InputState.hpp"
 
 class AbstractState
 {
@@ -10,7 +11,7 @@ class AbstractState
         virtual ~AbstractState() = default;
 
         // Méthodes virtuelles pures (= 0 les rend abstraites)
-        virtual void update() = 0;
+        virtual void update(const InputState& input) = 0;
         virtual void render() = 0;
         virtual void handleInput() = 0;
 };

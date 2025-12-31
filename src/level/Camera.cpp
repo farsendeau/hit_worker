@@ -1,4 +1,6 @@
 #include "level/Camera.hpp"
+#include "utils/constant.h"
+#include "entity/Player.hpp"
 
 Camera::Camera(/* args */)
 {
@@ -8,30 +10,9 @@ Camera::~Camera()
 {
 }
 
-void Camera::focusPlayer()
+void Camera::follow(const Player& player)
 {
-    // TODO: Implémenter le suivi du joueur
-}
-
-
-//==== Accesseur ====
-
-float Camera::getX()
-{
-    return x;
-}
-
-void Camera::setX(float value)
-{
-    x = value;
-}
-
-float Camera::getY()
-{
-    return y;
-}
-
-void Camera::setY(float value)
-{
-    y = value;
+    // Centre sur le joueur
+    x = player.getX() - (VIRTUAL_WIDTH / 2.0f) + (player.getWidth() / 2.0f);
+    // les limits sont appliquées dans GamePlaySate::update()
 }

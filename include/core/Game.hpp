@@ -2,6 +2,7 @@
 #define GAME_HPP
 
 #include "../utils/constant.h"
+#include "../utils/InputState.hpp"
 #include "StateManager.hpp"
 
 class Game
@@ -30,17 +31,7 @@ class Game
         void render();
 
     public:
-        // État des inputs (pour le gameplay)
-        struct InputState {
-            bool left{false};
-            bool right{false};
-            bool up{false};
-            bool down{false};
-            bool jump{false};
-            bool attack{false};
-            bool weaponSwitch{false};
-            bool pause{false};
-        } inputState;
+        InputState inputState{};
 
         //==== Fonction Public====
         Game();
