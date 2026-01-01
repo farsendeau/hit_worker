@@ -12,6 +12,8 @@ Player::~Player()
 
 void Player::update(const InputState &input, const Level &level)
 {
+    // TODO à refacto pour être utiliser par Entity
+
     // 1. Réinitialiser velocityX chaque frame
     velocityX = 0.0f;
 
@@ -25,15 +27,31 @@ void Player::update(const InputState &input, const Level &level)
         facingRight = true;
     }
 
-    // TODO la partie velocity et gravité doit aussi s'appliquer aux autre entité (ennemi, objet) non ? (à refacto)
+    //==== JUMP ====
+    // Init du saut
+    if (input.jump && onGround && !jumpPressed) {
+        velocityY = PLAYER_JUMP_VELOCITY; // -6.0f
+        jumpPressed = true;
+        onGround = false;
+        currentState = State::JUMP;
+    }  
+    
+    if (jumpPressed && !input.jump && velocityY < 0) {
+        // Saut variable: si bouton relâché tôt, reduire la montée
+        velocityY *= 0.5f; // Coupe la montée de moitié
+    } 
+    if (!input.jump) {
+        jumpPressed = false;
+    }
 
     // 3. Appliquer la vélocité à la position (pattern standard)
     x += velocityX;
+
     // Colision horizontal avec les murs
     // si le player est en movement
     if (velocityX != 0) {
-        int topTileY{static_cast<int>(y) / TILE_PX_HEIGHT};
-        int bottomTileY{static_cast<int>(y + height - 1) / TILE_PX_HEIGHT};
+        int topTileY = static_cast<int>(y) / TILE_PX_HEIGHT;
+        int bottomTileY = static_cast<int>(y + height - 1) / TILE_PX_HEIGHT;
         // SI player se deplace vers la droite
         if (velocityX > 0) {
             int rightTileX{static_cast<int>(x + width) / TILE_PX_WIDTH};
@@ -53,38 +71,45 @@ void Player::update(const InputState &input, const Level &level)
         }
     }
 
-    // 4. Applique la gravité
+    //=== GRAVITY ====
     velocityY += PLAYER_GRAVITY; // 044 px/frame²
     // Limit la vitesse de chute
     if (velocityY > PLAYER_MAX_FALL_SPEED) {
         velocityY = PLAYER_MAX_FALL_SPEED; // 8.0 px/frame
     }
     
-    // 5. Applique la velocité Y à perso
+    // Applique la velocité Y à perso
     y += velocityY;
 
-    // 6 Collision verticale avec le sol
-    // Calcule les coordonnées des coins bas du joueur en tiles
+    //==== Collisions verticales ====
+    // Calculer les positions APRÈS le mouvement
     int leftTileX = static_cast<int>(x) / TILE_PX_WIDTH;
     int rightTileX = static_cast<int>(x + width - 1) / TILE_PX_WIDTH;
+    int topTileY = static_cast<int>(y) / TILE_PX_HEIGHT;
     int bottomTileY = static_cast<int>(y + height) / TILE_PX_HEIGHT;
 
-    // Verifie si les tuiles en dessous du joueur sont solides
-    bool solidBelow = level.isSolidAt(leftTileX, bottomTileY) || level.isSolidAt(rightTileX, bottomTileY);
-    if (solidBelow && velocityY > 0) {
-        // Aligne le joueur sur la grille de tiles
-        y = (bottomTileY * TILE_PX_HEIGHT) - height;
-        velocityY = 0.0f;
-        onGround = true;
+    // Collision avec le plafond (quand on monte)
+    if (velocityY < 0) {  // Si on MONTE
+        bool solidAbove = level.isSolidAt(leftTileX, topTileY) || level.isSolidAt(rightTileX, topTileY);
+        if (solidAbove) {
+            y = (topTileY + 1) * TILE_PX_HEIGHT;
+            velocityY = 0.0f;
+        }
+    }
+
+    // Collision avec le sol (quand on descend)
+    if (velocityY > 0) {  // Si on DESCEND
+        bool solidBelow = level.isSolidAt(leftTileX, bottomTileY) || level.isSolidAt(rightTileX, bottomTileY);
+        if (solidBelow) {
+            y = (bottomTileY * TILE_PX_HEIGHT) - height;
+            velocityY = 0.0f;
+            onGround = true;
+        } else {
+            onGround = false;
+        }
     } else {
         onGround = false;
     }
-
-    // TODO Phase 3 Étape 4.2 : Ajouter collisions verticales
-
-
-    // TODO Phase 3 Étape 4.3 : Ajouter collisions horizontales
-    // TODO Phase 3 Étape 5 : Ajouter saut
 }
 
 void Player::render(float cameraX, float cameraY) const
