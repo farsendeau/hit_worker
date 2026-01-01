@@ -39,65 +39,75 @@ Implémentation du personnage joueur avec:
   - [x] `include/entity/Entity.hpp` (avec width/height pour sprites)
   - [x] `src/entity/Entity.cpp`
 
-### 👤 Player Class Skeleton (2h)
+### 👤 Player Class Skeleton (2h) ✅ TERMINÉ
 
-- [ ] **2.1** Créer `include/entities/Player.hpp`
-  - [ ] Définir enum `State` (IDLE, WALK, JUMP, FALL, CLIMB, ATTACK)
-  - [ ] Définir enum `Weapon` (FIST, PISTOL, GRENADE)
-  - [ ] Déclarer propriétés physiques (velocityX, velocityY, onGround, onLadder)
-  - [ ] Déclarer propriétés combat (hp, lives, invincibilityFrames, armes)
-  - [ ] Déclarer toutes les méthodes
-- [ ] **2.2** Créer `src/entities/Player.cpp`
-  - [ ] Implémenter constructeur
-  - [ ] Implémenter `render()` basique (rectangle vert)
-- [ ] **2.3** Intégrer dans GamePlayState
-  - [ ] Ajouter include `Player.hpp`
-  - [ ] Ajouter membre `Player player{32.0f, 128.0f};`
-  - [ ] Appeler `player.render()` dans `render()`
-- [ ] **2.4** **TEST**: Compiler et voir rectangle vert statique à l'écran
+- [x] **2.1** Créer `include/entity/Player.hpp`
+  - [x] Définir enum `State` (IDLE, WALK, JUMP, FALL, CLIMB, ATTACK)
+  - [x] Définir enum `Weapon` (FIST, PISTOL, GRENADE)
+  - [x] Déclarer propriétés physiques (velocityX, velocityY, onGround, onLadder)
+  - [x] Déclarer propriétés combat (hp, lives, invincibilityFrames, armes)
+  - [x] Déclarer toutes les méthodes
+- [x] **2.2** Créer `src/entity/Player.cpp`
+  - [x] Implémenter constructeur
+  - [x] Implémenter `render()` basique (rectangle vert)
+- [x] **2.3** Intégrer dans GamePlayState
+  - [x] Ajouter include `Player.hpp`
+  - [x] Ajouter membre `Player player{32.0f, 128.0f};`
+  - [x] Appeler `player.render()` dans `render()`
+- [x] **2.4** **TEST**: Compiler et voir rectangle vert statique à l'écran
 
-### 🎮 Input System (1h)
+### 🎮 Input System (1h) ✅ TERMINÉ
 
-- [ ] **3.1** Modifier `include/core/AbstractState.hpp`
-  - [ ] Ajouter forward declaration `struct InputState;`
-  - [ ] Modifier signature: `virtual void update(const InputState& input) = 0;`
-- [ ] **3.2** Mettre à jour tous les états (headers + cpp):
-  - [ ] `MenuState` - ajouter paramètre InputState à update()
-  - [ ] `GamePlayState` - ajouter paramètre InputState à update()
-  - [ ] `PauseState` - ajouter paramètre InputState à update()
-  - [ ] `GameOverState` - ajouter paramètre InputState à update()
-- [ ] **3.3** Modifier `include/core/StateManager.hpp`
-  - [ ] Ajouter forward declaration `struct InputState;`
-  - [ ] Modifier signature: `void update(const InputState& input);`
-- [ ] **3.4** Modifier `src/core/StateManager.cpp`
-  - [ ] Passer input à l'état actif: `states.top()->update(input);`
-- [ ] **3.5** Modifier `src/core/Game.cpp`
-  - [ ] Dans `handleInput()` (ligne ~138): Remplir `inputState` avec clavier
-  - [ ] Dans `run()`: Passer inputState au StateManager
-- [ ] **3.6** **TEST**: Compiler sans erreur
+- [x] **3.1** Créer `include/utils/InputState.hpp`
+  - [x] Définir structure InputState standalone
+- [x] **3.2** Modifier `include/core/AbstractState.hpp`
+  - [x] Ajouter forward declaration `struct InputState;`
+  - [x] Modifier signature: `virtual void update(const InputState& input) = 0;`
+- [x] **3.3** Mettre à jour tous les états (headers + cpp):
+  - [x] `MenuState` - ajouter paramètre InputState à update()
+  - [x] `GamePlayState` - ajouter paramètre InputState à update()
+- [x] **3.4** Modifier `include/core/StateManager.hpp`
+  - [x] Ajouter forward declaration `struct InputState;`
+  - [x] Modifier signature: `void update(const InputState& input);`
+- [x] **3.5** Modifier `src/core/StateManager.cpp`
+  - [x] Passer input à l'état actif: `states.back()->update(input);`
+- [x] **3.6** Modifier `src/core/Game.cpp`
+  - [x] Dans `handleInput()`: Remplir `inputState` avec clavier (Q/D/Z/S/Space/X/Y/Enter)
+  - [x] Dans `run()`: Passer inputState au StateManager
+- [x] **3.7** **TEST**: Compiler sans erreur
 
-### 🏃 Mouvement Basique (2h)
+### 🏃 Mouvement Basique (2h) ✅ TERMINÉ
 
-- [ ] **4.1** Implémenter `Player::handleHorizontalMovement()`
-  - [ ] Déplacement gauche/droite selon input
-  - [ ] Vitesse: 2px/frame au sol
-  - [ ] Changer `facingRight` selon direction
-  - [ ] Changer état IDLE/WALK
-- [ ] **4.2** Implémenter `Player::applyGravity()`
-  - [ ] Ajouter GRAVITY (0.4) à velocityY si pas au sol
-  - [ ] Limiter à MAX_FALL_SPEED
-- [ ] **4.3** Implémenter `Player::checkSolidCollision()`
-  - [ ] Vérifier 5 points (4 coins + centre)
-  - [ ] Utiliser `isSolidAt(tileX, tileY)` du level
-- [ ] **4.4** Implémenter `Player::applyVerticalCollision()`
-  - [ ] Détecter collision verticale
-  - [ ] Définir `onGround = true` si atterrit
-  - [ ] Snap position au bord de la tile
-- [ ] **4.5** Implémenter boucle `Player::update()`
-  - [ ] Appeler applyGravity()
-  - [ ] Appeler handleHorizontalMovement()
-  - [ ] Appliquer velocités avec collision
-- [ ] **4.6** **TEST**: Joueur tombe et se déplace gauche/droite
+- [x] **4.1** Implémenter gravité basique
+  - [x] Ajouter GRAVITY (0.4) à velocityY
+  - [x] Limiter à MAX_FALL_SPEED (8.0)
+  - [x] Appliquer velocityY à position
+- [x] **4.2** Implémenter collision verticale
+  - [x] Calculer coins bas du joueur en tiles
+  - [x] Vérifier solidité avec `level.isSolidAt()`
+  - [x] Aligner position sur grille si collision
+  - [x] Définir `onGround = true` si atterrit
+- [x] **4.3** Implémenter collision horizontale
+  - [x] Calculer coins latéraux (haut/bas)
+  - [x] Détecter collision à gauche
+  - [x] Détecter collision à droite
+  - [x] Bloquer contre les murs
+- [x] **4.4** Implémenter mouvement horizontal
+  - [x] Déplacement gauche/droite selon input (Q/D)
+  - [x] Vitesse: 2px/frame (PLAYER_WALK_SPEED)
+  - [x] Changer `facingRight` selon direction
+- [x] **4.5** Limiter joueur aux bords du niveau
+  - [x] Empêcher sortie à gauche (x < 0)
+  - [x] Empêcher sortie à droite (x > levelWidth)
+- [x] **4.6** Intégration caméra
+  - [x] Caméra suit le joueur (camera.follow())
+  - [x] Scrolling fluide
+- [x] **4.7** Fix échelles (hitwoker_tiled)
+  - [x] Modifier hitwoker_tiled pour calque "action"
+  - [x] Parser propriétés custom (ladder, kill)
+  - [x] Générer ladderTiles[] séparé de solidTiles[]
+  - [x] Ajouter isLadderLookup[] et isLadderAt()
+- [x] **4.8** **TEST**: Joueur tombe, se déplace gauche/droite, ne traverse plus les murs ni le sol, échelles ne bloquent plus
 
 ### 🦘 Saut (1-2h)
 

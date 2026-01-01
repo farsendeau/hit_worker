@@ -1,4 +1,5 @@
 #include "entity/Player.hpp"
+#include "level/Level.hpp"
 
 Player::Player(float startX, float startY)
 : Entity(startX, startY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WALK_SPEED)
@@ -11,8 +12,6 @@ Player::~Player()
 
 void Player::update(const InputState &input, const Level &level)
 {
-    (void) level;  // Sera utilisé pour collisions (Étape 4)
-
     // 1. Réinitialiser velocityX chaque frame
     velocityX = 0.0f;
 
@@ -26,10 +25,65 @@ void Player::update(const InputState &input, const Level &level)
         facingRight = true;
     }
 
+    // TODO la partie velocity et gravité doit aussi s'appliquer aux autre entité (ennemi, objet) non ? (à refacto)
+
     // 3. Appliquer la vélocité à la position (pattern standard)
     x += velocityX;
+    // Colision horizontal avec les murs
+    // si le player est en movement
+    if (velocityX != 0) {
+        int topTileY{static_cast<int>(y) / TILE_PX_HEIGHT};
+        int bottomTileY{static_cast<int>(y + height - 1) / TILE_PX_HEIGHT};
+        // SI player se deplace vers la droite
+        if (velocityX > 0) {
+            int rightTileX{static_cast<int>(x + width) / TILE_PX_WIDTH};
+            if (level.isSolidAt(rightTileX, topTileY) || level.isSolidAt(rightTileX, bottomTileY)) {
+                // bloque contre le mur à droite
+                x = (rightTileX * TILE_PX_WIDTH) - width;
+                velocityX = 0.0f;
+            }
+        // Alors player se deplace vers la gauche     
+        } else {
+            int leftTIleX{static_cast<int>(x) / TILE_PX_WIDTH};
+            if (level.isSolidAt(leftTIleX, topTileY) || level.isSolidAt(leftTIleX, bottomTileY)) {
+                // bloque contre le mur à gauche
+                x = (leftTIleX + 1) * TILE_PX_WIDTH;
+                velocityX = 0.0f;
+            }
+        }
+    }
 
-    // TODO Phase 3 Étape 4 : Ajouter gravité et collisions verticales
+    // 4. Applique la gravité
+    velocityY += PLAYER_GRAVITY; // 044 px/frame²
+    // Limit la vitesse de chute
+    if (velocityY > PLAYER_MAX_FALL_SPEED) {
+        velocityY = PLAYER_MAX_FALL_SPEED; // 8.0 px/frame
+    }
+    
+    // 5. Applique la velocité Y à perso
+    y += velocityY;
+
+    // 6 Collision verticale avec le sol
+    // Calcule les coordonnées des coins bas du joueur en tiles
+    int leftTileX = static_cast<int>(x) / TILE_PX_WIDTH;
+    int rightTileX = static_cast<int>(x + width - 1) / TILE_PX_WIDTH;
+    int bottomTileY = static_cast<int>(y + height) / TILE_PX_HEIGHT;
+
+    // Verifie si les tuiles en dessous du joueur sont solides
+    bool solidBelow = level.isSolidAt(leftTileX, bottomTileY) || level.isSolidAt(rightTileX, bottomTileY);
+    if (solidBelow && velocityY > 0) {
+        // Aligne le joueur sur la grille de tiles
+        y = (bottomTileY * TILE_PX_HEIGHT) - height;
+        velocityY = 0.0f;
+        onGround = true;
+    } else {
+        onGround = false;
+    }
+
+    // TODO Phase 3 Étape 4.2 : Ajouter collisions verticales
+
+
+    // TODO Phase 3 Étape 4.3 : Ajouter collisions horizontales
     // TODO Phase 3 Étape 5 : Ajouter saut
 }
 

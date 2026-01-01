@@ -23,6 +23,8 @@ constexpr int PREFERRED_MONITOR{1};
 // Niveau
 constexpr int LEVEL_WIDTH{320 * 16};  // 5120px
 constexpr int SCREENS_PER_LEVEL{16};
+constexpr int TILE_PX_WIDTH{16}; // tile de 16 px de large
+constexpr int TILE_PX_HEIGHT{16}; // tile de 16 px de haut
 
 // Timing
 constexpr float TARGET_FPS{60.0f};

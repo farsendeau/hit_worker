@@ -40,16 +40,23 @@ const uint8_t dataMapVisual[180] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // Ligne 2
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // Ligne 3
     0, 1, 2, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 2, 4, 0, 5, 3, 6, 0, 5, 3, 6, 0, 7, 2, 8, 9, 0, 0,   // Ligne 4
-    0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0,   // Ligne 5
+    0, 10, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0,   // Ligne 5
     11, 11, 11, 0, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11  // Ligne 6
 };
 
 // ========================================
 // TILES SOLIDES - IDs des tiles qui sont solides
 // ========================================
-// Nombre de types: 3
+// Nombre de types: 2
 
-const uint8_t solidTiles[3] = {1, 2, 3};
+const uint8_t solidTiles[2] = {1, 3};
+
+// ========================================
+// TILES ÉCHELLES - IDs des tiles échelles
+// ========================================
+// Nombre de types: 1
+
+const uint8_t ladderTiles[1] = {2};
 
 // ========================================
 // TILES MORTELLES - IDs des tiles qui tuent
@@ -66,7 +73,12 @@ constexpr uint8_t MAX_TILE_ID = 4;
 
 // Lookup table pour les tiles solides (true si solide)
 constexpr bool isSolidLookup[MAX_TILE_ID + 1] = {
-    false, true, true, true, false
+    false, true, false, true, false
+};
+
+// Lookup table pour les tiles échelles (true si échelle)
+constexpr bool isLadderLookup[MAX_TILE_ID + 1] = {
+    false, false, true, false, false
 };
 
 // Lookup table pour les tiles mortelles (true si tue)
@@ -81,7 +93,7 @@ constexpr bool isKillLookup[MAX_TILE_ID + 1] = {
 // Avec compression:
 //   - Visual (blocs 2×2): 1824 bits
 //   - Solid (tiles): 5760 bits
-//   - Kill (tiles): 5760 bits
+//   - Action (tiles): 5760 bits
 //   - TOTAL: 13344 bits (1668 bytes)
 // ÉCONOMIE: 22.7778%
 
@@ -110,6 +122,12 @@ inline bool isSolidTile(uint8_t tileID) {
     return isSolidLookup[tileID];
 }
 
+// Vérifier si une tile ID est une ÉCHELLE (O(1) avec lookup table)
+inline bool isLadderTile(uint8_t tileID) {
+    if (tileID > MAX_TILE_ID) return false;
+    return isLadderLookup[tileID];
+}
+
 // Vérifier si une tile ID TUE le joueur (O(1) avec lookup table)
 inline bool isKillTile(uint8_t tileID) {
     if (tileID > MAX_TILE_ID) return false;
@@ -120,6 +138,12 @@ inline bool isKillTile(uint8_t tileID) {
 inline bool isSolidAt(int x, int y) {
     uint8_t tileID = getVisualTileAt(x, y);
     return isSolidTile(tileID);
+}
+
+// Vérifier échelle à une position (x, y)
+inline bool isLadderAt(int x, int y) {
+    uint8_t tileID = getVisualTileAt(x, y);
+    return isLadderTile(tileID);
 }
 
 // Vérifier danger à une position (x, y)

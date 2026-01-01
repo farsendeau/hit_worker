@@ -21,7 +21,8 @@ class GamePlayState: public AbstractState
         Camera camera;
         // Level et Player
         Level level;
-        Player player{32.0f, 128.0f};  // Position de départ (2 tiles à droite, 8 tiles en bas)
+        //Player player{32.0f, 128.0f};  // Position de départ (2 tiles à droite, 8 tiles en bas)
+        Player player{70.0f, 70.0f};
     public:
         GamePlayState();
         ~GamePlayState();
