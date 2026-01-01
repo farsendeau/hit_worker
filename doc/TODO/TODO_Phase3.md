@@ -109,37 +109,45 @@ Implémentation du personnage joueur avec:
   - [x] Ajouter isLadderLookup[] et isLadderAt()
 - [x] **4.8** **TEST**: Joueur tombe, se déplace gauche/droite, ne traverse plus les murs ni le sol, échelles ne bloquent plus
 
-### 🦘 Saut (1-2h)
+### 🦘 Saut (1-2h) ✅ TERMINÉ
 
-- [ ] **5.1** Ajouter variable membre `bool jumpPressed{false};`
-- [ ] **5.2** Implémenter `Player::handleJumpInput()`
-  - [ ] Démarrer saut si `input.jump && onGround`
-  - [ ] Définir velocityY = JUMP_VELOCITY (-6.0f)
-  - [ ] Marquer `jumpPressed = true`
-- [ ] **5.3** Ajouter saut variable
-  - [ ] Si bouton relâché tôt: `velocityY *= 0.5f`
-  - [ ] Reset `jumpPressed` quand bouton relâché
-- [ ] **5.4** **TEST**:
-  - [ ] Saut maintenu atteint ~64px
-  - [ ] Saut tapé atteint ~24px
-  - [ ] Ne peut pas double-jump
+- [x] **5.1** Ajouter variable membre `bool jumpPressed{false};`
+- [x] **5.2** Implémenter système de saut dans `Player::update()`
+  - [x] Démarrer saut si `input.jump && onGround && !jumpPressed`
+  - [x] Définir velocityY = JUMP_VELOCITY (-6.0f)
+  - [x] Marquer `jumpPressed = true`
+  - [x] Fix bug resaut automatique (reset uniquement si `!input.jump`)
+- [x] **5.3** Ajouter saut variable
+  - [x] Si bouton relâché tôt: `velocityY *= 0.5f`
+  - [x] Reset `jumpPressed` quand bouton relâché
+- [x] **5.4** Ajouter collision plafond
+  - [x] Vérifier `velocityY < 0` pour détecter montée
+  - [x] Bloquer contre plafond si collision
+- [x] **5.5** **TEST**:
+  - [x] Saut maintenu atteint ~45-64px
+  - [x] Saut tapé atteint ~22-30px
+  - [x] Ne peut pas double-jump
+  - [x] Ne peut pas traverser blocs par le dessous
+  - [x] Pas de resaut automatique quand bouton maintenu
 
-### 🧱 Collision Raffinée (2h)
+### 🧱 Collision Raffinée (2h) ⚠️ PARTIEL
 
-- [ ] **6.1** Implémenter `Player::applyHorizontalCollision()`
-  - [ ] Tester collision à newX
-  - [ ] Snap au bord de tile si collision
-  - [ ] Arrêter velocityX
-- [ ] **6.2** Améliorer collision multi-points
-  - [ ] Vérifier tous les coins de la hitbox
-  - [ ] Gérer cas limites (coins de tiles)
-- [ ] **6.3** Implémenter `Player::checkKillCollision()`
+- [x] **6.1** Implémenter collision horizontale
+  - [x] Tester collision après x += velocityX
+  - [x] Snap au bord de tile si collision (lignes 60, 68)
+  - [x] Arrêter velocityX
+- [x] **6.2** Améliorer collision multi-points
+  - [x] Vérifier coins de la hitbox (topTileY + bottomTileY)
+  - [x] Collision verticale avec multi-points (leftTileX + rightTileX)
+- [ ] **6.3** Implémenter `Player::checkKillCollision()` - À FAIRE
   - [ ] Utiliser `isKillAt(tileX, tileY)`
-  - [ ] Appeler dans applyVerticalCollision
-- [ ] **6.4** **TEST**:
-  - [ ] Ne traverse pas les murs
-  - [ ] Ne tombe pas à travers le sol
-  - [ ] Kill tiles tuent le joueur
+  - [ ] Appeler après collision verticale/horizontale
+  - [ ] Gérer mort du joueur
+- [x] **6.4** **TEST**:
+  - [x] Ne traverse pas les murs
+  - [x] Ne tombe pas à travers le sol
+  - [x] Ne traverse pas le plafond
+  - [ ] Kill tiles tuent le joueur (à implémenter)
 
 ### 🪜 Système d'Échelles (2h)
 
