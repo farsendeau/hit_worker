@@ -130,7 +130,7 @@ Implémentation du personnage joueur avec:
   - [x] Ne peut pas traverser blocs par le dessous
   - [x] Pas de resaut automatique quand bouton maintenu
 
-### 🧱 Collision Raffinée (2h) ⚠️ PARTIEL
+### 🧱 Collision Raffinée (2h) ✅ TERMINÉ
 
 - [x] **6.1** Implémenter collision horizontale
   - [x] Tester collision après x += velocityX
@@ -139,15 +139,16 @@ Implémentation du personnage joueur avec:
 - [x] **6.2** Améliorer collision multi-points
   - [x] Vérifier coins de la hitbox (topTileY + bottomTileY)
   - [x] Collision verticale avec multi-points (leftTileX + rightTileX)
-- [ ] **6.3** Implémenter `Player::checkKillCollision()` - À FAIRE
-  - [ ] Utiliser `isKillAt(tileX, tileY)`
-  - [ ] Appeler après collision verticale/horizontale
-  - [ ] Gérer mort du joueur
+- [x] **6.3** Implémenter `Player::checkKillCollision()`
+  - [x] Utiliser `isKillAt(tileX, tileY)` (Player.cpp:309)
+  - [x] Appeler dans update() (Player.cpp:165)
+  - [x] Gérer mort du joueur (Player.cpp:312)
+  - [x] Protection contre boucle de mort grâce à invincibilité (Player.cpp:257-260)
 - [x] **6.4** **TEST**:
   - [x] Ne traverse pas les murs
   - [x] Ne tombe pas à travers le sol
   - [x] Ne traverse pas le plafond
-  - [ ] Kill tiles tuent le joueur (à implémenter)
+  - [x] Kill tiles tuent le joueur instantanément
 
 ### 🪜 Système d'Échelles (2h) ✅ TERMINÉ
 
@@ -231,53 +232,54 @@ Implémentation du personnage joueur avec:
 ## Tests de Validation Finale
 
 ### Tests Physique
-- [ ] Déplacement gauche/droite à 2px/frame
-- [ ] Gravité appliquée (0.4px/frame²)
-- [ ] Vitesse maximale de chute respectée (8px/frame)
-- [ ] Friction: arrêt instantané sans input
+- [x] Déplacement gauche/droite à 2px/frame ✅
+- [x] Gravité appliquée (0.4px/frame²) ✅
+- [x] Vitesse maximale de chute respectée (8px/frame) ✅
+- [x] Friction: arrêt instantané sans input ✅
 
 ### Tests Saut
-- [ ] Saut maintenu: hauteur ~64px (4 tiles)
-- [ ] Saut tapé: hauteur ~24px (1.5 tiles)
-- [ ] Ne peut pas sauter en l'air (double-jump)
-- [ ] Peut se déplacer horizontalement en l'air
+- [x] Saut maintenu: hauteur ~64px (4 tiles) ✅
+- [x] Saut tapé: hauteur ~24px (1.5 tiles) ✅
+- [x] Ne peut pas sauter en l'air (double-jump) ✅
+- [x] Peut se déplacer horizontalement en l'air ✅
 
 ### Tests Collision
-- [ ] Atterrit correctement sur plateformes
-- [ ] Ne traverse pas les murs (horizontal)
-- [ ] Touche plafond correctement (vertical)
-- [ ] Pas de traversée de sol
-- [ ] Pas de jitter contre murs
-- [ ] Kill tiles tuent instantanément
+- [x] Atterrit correctement sur plateformes ✅
+- [x] Ne traverse pas les murs (horizontal) ✅ FIXÉ (Player.cpp:73-117)
+- [x] Touche plafond correctement (vertical) ✅
+- [x] Pas de traversée de sol ✅
+- [x] Pas de jitter contre murs ✅
+- [x] Kill tiles tuent instantanément ✅
 
 ### Tests Échelles
-- [ ] Entre sur échelle avec UP
-- [ ] Monte à 1.5px/frame
-- [ ] Descend à 1.5px/frame
-- [ ] Sort avec JUMP
-- [ ] Sort si quitte la tile échelle
-- [ ] Pas de gravité sur échelle
+- [x] Entre sur échelle avec UP ✅
+- [x] Monte à 1.5px/frame ✅
+- [x] Descend à 1.5px/frame ✅
+- [x] Sort avec JUMP ✅
+- [x] Sort si quitte la tile échelle ✅
+- [x] Pas de gravité sur échelle ✅
+- [ ] ⚠️ **BUG CONNU**: Centrage parfois incorrect sur échelle (Player.cpp:279)
 
 ### Tests Caméra
-- [ ] Suit le joueur horizontalement
-- [ ] Centrée sur le joueur
-- [ ] S'arrête aux bords du niveau (X=0 et X=maxCamera)
-- [ ] Scrolling fluide
+- [x] Suit le joueur horizontalement ✅
+- [x] Centrée sur le joueur ✅
+- [x] S'arrête aux bords du niveau (X=0 et X=maxCamera) ✅
+- [ ] ⚠️ **PERFORMANCE**: Ralentissements possibles (WSL2 ou mode DEBUG?)
 
 ### Tests Combat/Vie
-- [ ] Invincibilité dure 30 frames (0.5 sec)
-- [ ] Clignotement visible quand invincible
-- [ ] HP diminue quand touché
-- [ ] Lives diminue à 0 HP
-- [ ] Respawn au bon endroit
-- [ ] Game Over à 0 lives (futur)
+- [x] Invincibilité dure 30 frames (0.5 sec) ✅
+- [x] Clignotement visible quand invincible ✅
+- [x] HP diminue quand touché ✅
+- [x] Lives diminue à 0 HP ✅
+- [x] Respawn au bon endroit ✅
+- [x] Game Over à 0 lives (log DEBUG) ✅
 
 ### Tests Visuels
-- [ ] Rectangle vert au sol
-- [ ] Rectangle cyan en l'air
-- [ ] Rectangle jaune sur échelle
-- [ ] Clignotement blanc semi-transparent si invincible
-- [ ] Flèche de direction en mode DEBUG
+- [x] Rectangle vert au sol ✅
+- [x] Rectangle cyan en l'air ✅
+- [x] Rectangle jaune sur échelle ✅
+- [x] Clignotement pendant invincibilité ✅
+- [x] Flèche de direction en mode DEBUG ✅
 
 ---
 
