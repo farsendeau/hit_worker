@@ -75,20 +75,42 @@ void Player::update(const InputState &input, const Level &level)
     if (velocityX != 0) {
         int topTileY = static_cast<int>(y) / TILE_PX_HEIGHT;
         int bottomTileY = static_cast<int>(y + height - 1) / TILE_PX_HEIGHT;
+
         // SI player se deplace vers la droite
         if (velocityX > 0) {
-            int rightTileX{static_cast<int>(x + width) / TILE_PX_WIDTH};
-            if (level.isSolidAt(rightTileX, topTileY) || level.isSolidAt(rightTileX, bottomTileY)) {
+            int rightTileX = static_cast<int>(x + width) / TILE_PX_WIDTH;
+
+            // Vérifier TOUTES les tiles verticalement (pas juste haut/bas)
+            bool collision = false;
+            for (int tileY = topTileY; tileY <= bottomTileY; tileY++) {
+                if (level.isSolidAt(rightTileX, tileY)) {
+                    collision = true;
+                    break;
+                }
+            }
+
+            if (collision) {
                 // bloque contre le mur à droite
                 x = (rightTileX * TILE_PX_WIDTH) - width;
                 velocityX = 0.0f;
             }
-        // Alors player se deplace vers la gauche     
-        } else {
-            int leftTIleX{static_cast<int>(x) / TILE_PX_WIDTH};
-            if (level.isSolidAt(leftTIleX, topTileY) || level.isSolidAt(leftTIleX, bottomTileY)) {
+        }
+        // SI player se deplace vers la gauche
+        else {
+            int leftTileX = static_cast<int>(x) / TILE_PX_WIDTH;
+
+            // Vérifier TOUTES les tiles verticalement
+            bool collision = false;
+            for (int tileY = topTileY; tileY <= bottomTileY; tileY++) {
+                if (level.isSolidAt(leftTileX, tileY)) {
+                    collision = true;
+                    break;
+                }
+            }
+
+            if (collision) {
                 // bloque contre le mur à gauche
-                x = (leftTIleX + 1) * TILE_PX_WIDTH;
+                x = (leftTileX + 1) * TILE_PX_WIDTH;
                 velocityX = 0.0f;
             }
         }
@@ -156,11 +178,14 @@ void Player::update(const InputState &input, const Level &level)
         onGround = false;
     }
 
-    // Décrémenter invincibilité
+    //==== INVINCIBILITY ====
     if (invincibilityFrames > 0) {
         invincibilityFrames--;
     }
-}
+
+    //==== KILL TILES ====
+    checkKillCollision(level);
+}   
 
 void Player::render(float cameraX, float cameraY) const
 {
@@ -250,14 +275,17 @@ void Player::ladderProcess(const InputState &input, const Level &level)
     if (canEnterLadder) {
         onLadder = true;
         currentState = State::CLIMB;
-        // centre le player sur l'échelle
-        x = centerX * TILE_PX_WIDTH + (TILE_PX_WIDTH - width) / 2.0f;
         DEBUG_LOG(">>> ENTREE SUR ECHELLE <<<\n");
     }
 
     // si sur échelle, gérer le mouvement vertical
     if (onLadder) {
         DEBUG_LOG("on ladder\n");
+
+        // Centre le player sur l'échelle à CHAQUE frame (pas seulement à l'entrée)
+        // Cela évite les décalages si le joueur change de tuile pendant la montée
+        x = centerX * TILE_PX_WIDTH + (TILE_PX_WIDTH - width) / 2.0f;
+
         // Reset velocityY (pas de gravité sur échelle)
         velocityY = 0.0f;
 
@@ -348,4 +376,18 @@ void Player::respawn()
     invincibilityFrames = INVINCIBILITY_FRAMES;
 
     DEBUG_LOG("Player respawn à (%.0f, %.0f)\n", x, y);
+}
+
+void Player::checkKillCollision(const Level &level)
+{
+    // Calcule la position centrale du joueur en Tile
+    int centerX = static_cast<int>(x + width / 2.0f) / TILE_PX_WIDTH;
+    int centerY = static_cast<int>(y + height / 2.0f) / TILE_PX_HEIGHT;
+
+    // Vérifie si le player est sur une kill tile
+    if (level.isKillAt(centerX, centerY)) {
+        DEBUG_LOG(">>> KILL TILE! <<< \n");
+        // Mort instantanée (inflige tous les HP)
+        takeDamage(hp);
+    }
 }

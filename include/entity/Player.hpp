@@ -59,7 +59,7 @@ class Player: public Entity
         // Méthodes de combat
         void takeDamage(int damage);
         void respawn();
-
+        void checkKillCollision(const Level &level);
 };
 
 #endif // PLAYER_HPP
