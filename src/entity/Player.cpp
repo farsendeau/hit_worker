@@ -280,8 +280,6 @@ void Player::ladderProcess(const InputState &input, const Level &level)
 
     // si sur échelle, gérer le mouvement vertical
     if (onLadder) {
-        DEBUG_LOG("on ladder\n");
-
         // Centre le player sur l'échelle à CHAQUE frame (pas seulement à l'entrée)
         // Cela évite les décalages si le joueur change de tuile pendant la montée
         x = centerX * TILE_PX_WIDTH + (TILE_PX_WIDTH - width) / 2.0f;
