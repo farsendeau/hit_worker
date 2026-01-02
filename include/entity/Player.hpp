@@ -28,9 +28,12 @@ class Player: public Entity
         };
 
     private:
-        bool onLadder{};   // est sur une échelle ?
-        bool jumpPressed{};// Bouton de saut enfoncé ? 
+        bool onLadder{};     // est sur une échelle ?
+        bool jumpPressed{};  // Bouton de saut enfoncé ?
 
+        // ==== Méthodes privées ====
+        void ladderProcess(const InputState &input, const Level &level);
+        
         // ==== Propriétés Combat ====
         int hp{100};                      // Points de vie actuels
         int lives{PLAYER_START_LIVES};    // Vies restantes

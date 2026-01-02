@@ -1,5 +1,6 @@
 #include "entity/Player.hpp"
 #include "level/Level.hpp"
+#include <cstdio>
 
 Player::Player(float startX, float startY)
 : Entity(startX, startY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WALK_SPEED)
@@ -17,13 +18,19 @@ void Player::update(const InputState &input, const Level &level)
     // 1. Réinitialiser velocityX chaque frame
     velocityX = 0.0f;
 
-    // 2. Calculer velocityX selon input
+    //==== MOVE RIGHT/LEFT ====
     if (input.left) {
-        velocityX = -PLAYER_WALK_SPEED;  // Négatif = gauche
+        // Seulement si pas sur echelle
+        if (!onLadder) {
+            velocityX = -PLAYER_WALK_SPEED;  // Négatif = gauche
+        }
         facingRight = false;
     }
     if (input.right) {
-        velocityX = PLAYER_WALK_SPEED;   // Positif = droite
+        // Seulement si pas sur echelle
+        if (!onLadder) {
+            velocityX = PLAYER_WALK_SPEED;   // Positif = droite
+        }
         facingRight = true;
     }
 
@@ -44,10 +51,14 @@ void Player::update(const InputState &input, const Level &level)
         jumpPressed = false;
     }
 
+
+    //==== LADDER ====
+    ladderProcess(input, level);
+
     // 3. Appliquer la vélocité à la position (pattern standard)
     x += velocityX;
 
-    // Colision horizontal avec les murs
+    //==== COLLISION HORIZONTAL SOLID ====
     // si le player est en movement
     if (velocityX != 0) {
         int topTileY = static_cast<int>(y) / TILE_PX_HEIGHT;
@@ -72,16 +83,19 @@ void Player::update(const InputState &input, const Level &level)
     }
 
     //=== GRAVITY ====
-    velocityY += PLAYER_GRAVITY; // 044 px/frame²
-    // Limit la vitesse de chute
-    if (velocityY > PLAYER_MAX_FALL_SPEED) {
-        velocityY = PLAYER_MAX_FALL_SPEED; // 8.0 px/frame
+    // Appliquer gravité SEULEMENT si pas sur échelle
+    if (!onLadder) {
+        velocityY += PLAYER_GRAVITY; // 0.4 px/frame²
+        // Limit la vitesse de chute
+        if (velocityY > PLAYER_MAX_FALL_SPEED) {
+            velocityY = PLAYER_MAX_FALL_SPEED; // 8.0 px/frame
+        }
     }
     
     // Applique la velocité Y à perso
     y += velocityY;
 
-    //==== Collisions verticales ====
+    //==== COLLISION VERTICAL SOLID ====
     // Calculer les positions APRÈS le mouvement
     int leftTileX = static_cast<int>(x) / TILE_PX_WIDTH;
     int rightTileX = static_cast<int>(x + width - 1) / TILE_PX_WIDTH;
@@ -100,7 +114,26 @@ void Player::update(const InputState &input, const Level &level)
     // Collision avec le sol (quand on descend)
     if (velocityY > 0) {  // Si on DESCEND
         bool solidBelow = level.isSolidAt(leftTileX, bottomTileY) || level.isSolidAt(rightTileX, bottomTileY);
-        if (solidBelow) {
+
+        // Échelle comme plateforme one-way (seulement le SOMMET est solide)
+        bool ladderBelow = false;
+        if (!input.down) {  // Seulement si DOWN pas pressé
+            // Vérifier s'il y a une échelle aux pieds
+            bool ladderAtFeet = level.isLadderAt(leftTileX, bottomTileY) || level.isLadderAt(rightTileX, bottomTileY);
+
+            if (ladderAtFeet) {
+                // Il y a une échelle, vérifier si c'est le sommet (pas d'échelle au-dessus)
+                int aboveFeetY = bottomTileY - 1;
+                bool ladderAboveFeet = level.isLadderAt(leftTileX, aboveFeetY) || level.isLadderAt(rightTileX, aboveFeetY);
+
+                if (!ladderAboveFeet) {
+                    // Pas d'échelle au-dessus = on est sur le SOMMET → bloquer
+                    ladderBelow = true;
+                }
+            }
+        }
+
+        if (solidBelow || ladderBelow) {
             y = (bottomTileY * TILE_PX_HEIGHT) - height;
             velocityY = 0.0f;
             onGround = true;
@@ -125,4 +158,84 @@ void Player::render(float cameraX, float cameraY) const
         screenY + height,
         al_map_rgb(0, 255, 0) // vert
     );
+}
+
+void Player::ladderProcess(const InputState &input, const Level &level)
+{
+    // calcule position centrale du player pour detecter l'échelle
+    int centerX = static_cast<int>(x + width / 2.0f) / TILE_PX_WIDTH;
+    int centerY = static_cast<int>(y + height / 2.0f) / TILE_PX_HEIGHT;
+
+    // Vérifie si le player est sur une tile échelle
+    bool isOnLadder = level.isLadderAt(centerX, centerY);
+
+    // Entrée sur l'échelle:
+    // - Avec DOWN (descendre)
+    // - Ou avec UP mais seulement si on monte depuis le bas (onGround ou velocityY > 0)
+    bool canEnterLadder = false;
+    if (isOnLadder && !onLadder) {
+        if (input.down) {
+            // Peut toujours entrer en descendant
+            canEnterLadder = true;
+        } else if (input.up && (onGround || velocityY >= 0)) {
+            // Peut entrer en montant SEULEMENT si au sol ou en train de tomber
+            // (empêche de re-rentrer quand on sort par le haut)
+            canEnterLadder = true;
+        }
+    }
+
+    if (canEnterLadder) {
+        onLadder = true;
+        currentState = State::CLIMB;
+        // centre le player sur l'échelle
+        x = centerX * TILE_PX_WIDTH + (TILE_PX_WIDTH - width) / 2.0f;
+        DEBUG_LOG(">>> ENTREE SUR ECHELLE <<<\n");
+    }
+
+    // si sur échelle, gérer le mouvement vertical
+    if (onLadder) {
+        DEBUG_LOG("on ladder\n");
+        // Reset velocityY (pas de gravité sur échelle)
+        velocityY = 0.0f;
+
+        // Monte avec UP
+        if (input.up) {
+            // Vérifier s'il y a une échelle au-dessus du centre
+            int aboveCenterY = centerY - 1;
+            bool ladderAbove = level.isLadderAt(centerX, aboveCenterY);
+
+            if (!ladderAbove) {
+                // Fin de l'échelle, sortir au-dessus
+                onLadder = false;
+                onGround = true;
+                velocityY = 0.0f;
+                currentState = State::IDLE;
+                // Positionner au-dessus de l'échelle
+                y = centerY * TILE_PX_HEIGHT - height;
+                DEBUG_LOG(">>> SORTIE EN HAUT DE L'ECHELLE <<<\n");
+            } else {
+                // Il y a une échelle au-dessus, continuer à monter
+                velocityY = -PLAYER_CLIMB_SPEED;  // -1.5
+            }
+        }
+        // Descend avec DOWN
+        else if (input.down) {
+            velocityY = PLAYER_CLIMB_SPEED;   // +1.5
+        }   
+
+        // Sortir de l'échelle avec JUMP
+        if (input.jump) {
+            onLadder = false;
+            velocityY = PLAYER_JUMP_VELOCITY; // -6.0f
+            jumpPressed = true;
+            currentState = State::JUMP;
+        }
+
+        // sortir automatiquement si plus sur échelle
+        if (!isOnLadder) {
+            onLadder = false;
+            currentState = State::IDLE;
+        }
+    }
+
 }
