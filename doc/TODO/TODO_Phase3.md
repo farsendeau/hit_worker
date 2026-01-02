@@ -190,39 +190,41 @@ Implémentation du personnage joueur avec:
   - [x] Appel `camera.follow(player)` (ligne 36)
 - [x] **8.5** **TEST**: Caméra suit le joueur en scrolling horizontal fluide
 
-### 💚 Polish et Système de Vie (2h)
+### 💚 Polish et Système de Vie (2h) ✅ TERMINÉ
 
-- [ ] **9.1** Implémenter `Player::takeDamage(int damage)`
-  - [ ] Vérifier invincibilityFrames
-  - [ ] Réduire hp
-  - [ ] Activer invincibilité (30 frames)
-  - [ ] Gérer mort (lives--)
-- [ ] **9.2** Implémenter `Player::respawn()`
-  - [ ] Reset position (32, 128)
-  - [ ] Reset velocités
-  - [ ] Restore hp
-  - [ ] Activer invincibilité
-- [ ] **9.3** Améliorer `Player::render()`
-  - [ ] Couleur selon état (vert=sol, cyan=air, jaune=échelle)
-  - [ ] Clignotement si invincible
-- [ ] **9.4** Mode DEBUG
-  - [ ] Dessiner hitbox rouge
-  - [ ] Flèche de direction
-  - [ ] Logs de débogage
-- [ ] **9.5** Décrémenter invincibilityFrames dans update()
-- [ ] **9.6** **TEST**: Invincibilité clignote correctement
+- [x] **9.1** Implémenter `Player::takeDamage(int damage)`
+  - [x] Vérifier invincibilityFrames (Player.cpp:257-260)
+  - [x] Réduire hp (Player.cpp:263)
+  - [x] Activer invincibilité (30 frames) (Player.cpp:267)
+  - [x] Gérer mort (lives--) (Player.cpp:270-280)
+- [x] **9.2** Implémenter `Player::respawn()`
+  - [x] Reset position (32, 128) (Player.cpp:286-287)
+  - [x] Reset velocités (Player.cpp:290-291)
+  - [x] Restore hp (Player.cpp:294)
+  - [x] Activer invincibilité (Player.cpp:297)
+- [x] **9.3** Améliorer `Player::render()`
+  - [x] Couleur selon état (vert=sol, cyan=air, jaune=échelle) (Player.cpp:177-191)
+  - [x] Clignotement si invincible (Player.cpp:170-174)
+- [x] **9.4** Mode DEBUG
+  - [x] Dessiner hitbox rouge (Player.cpp:202-207)
+  - [x] Flèche de direction (Player.cpp:209-222)
+  - [x] Logs de débogage (Player.cpp:258, 264, 272, 277, 299)
+  - [x] HUD DEBUG (HP/Lives/Inv) (Player.cpp:195-200)
+  - [x] Touche P pour test dégâts (Player.cpp:21-31)
+- [x] **9.5** Décrémenter invincibilityFrames dans update() (Player.cpp:159-162)
+- [x] **9.6** **TEST**: Invincibilité clignote correctement
 
-### 🔨 Compilation (30min)
+### 🔨 Compilation (30min) ✅ TERMINÉ
 
-- [ ] **10.1** Mettre à jour CMakeLists.txt ou Makefile
-  - [ ] Ajouter `src/entities/Entity.cpp`
-  - [ ] Ajouter `src/entities/Player.cpp`
-- [ ] **10.2** Vérifier tous les includes
-  - [ ] GamePlayState inclut Player.hpp
-  - [ ] Player inclut Entity.hpp
-  - [ ] Camera forward declare Player
-  - [ ] AbstractState forward declare InputState
-- [ ] **10.3** **BUILD**: Compiler sans erreur ni warning
+- [x] **10.1** Mettre à jour CMakeLists.txt ou Makefile
+  - [x] Ajouter `src/entity/Entity.cpp`
+  - [x] Ajouter `src/entity/Player.cpp`
+- [x] **10.2** Vérifier tous les includes
+  - [x] GamePlayState inclut Player.hpp
+  - [x] Player inclut Entity.hpp
+  - [x] Camera forward declare Player
+  - [x] AbstractState forward declare InputState
+- [x] **10.3** **BUILD**: Compiler sans erreur ni warning
 
 ---
 

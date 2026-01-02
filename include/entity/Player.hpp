@@ -55,6 +55,11 @@ class Player: public Entity
         // Méthodes helper pour la caméra
         float getCenterX() const { return x + width / 2.0f; }
         float getCenterY() const { return y + height / 2.0f; }
+
+        // Méthodes de combat
+        void takeDamage(int damage);
+        void respawn();
+
 };
 
 #endif // PLAYER_HPP

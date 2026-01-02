@@ -49,6 +49,9 @@ constexpr float PLAYER_HEIGHT{32.0f};
     // Variable globale pour le debug log (définie dans Game.cpp)
     extern ALLEGRO_TEXTLOG* g_debugLog;
 
+    // Font globale pour affichage DEBUG (définie dans Game.cpp)
+    extern ALLEGRO_FONT* g_debugFont;
+
     // Macro pour logger facilement depuis n'importe où
     #define DEBUG_LOG(format, ...) \
         do { \

@@ -10,6 +10,7 @@ struct InputState {
     bool attack{false};
     bool weaponSwitch{false};
     bool pause{false};
+    bool debugDamage{false}; // à supprimer après le dev
 };
 
 #endif // INPUT_STATE
