@@ -9,7 +9,7 @@ class MenuState: public AbstractState
     public:
         MenuState();
         ~MenuState();
-        virtual void update();
+        virtual void update(const InputState& input) override;
         virtual void render();
         virtual void handleInput();
 };

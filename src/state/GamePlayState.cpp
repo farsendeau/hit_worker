@@ -13,21 +13,28 @@ GamePlayState::~GamePlayState()
 {
 }
 
-void GamePlayState::update()
+void GamePlayState::update(const InputState &input)
 {
     // Récupérer l'état actuel du clavier
-    ALLEGRO_KEYBOARD_STATE keyState;
-    al_get_keyboard_state(&keyState);
+    player.update(input, level);
 
-    // Test: déplacer la caméra manuellement
-    if (al_key_down(&keyState, ALLEGRO_KEY_RIGHT)) {
-        camera.setX(camera.getX() + 2.0f);
-        //DEBUG_LOG("Camera moved RIGHT -> X: %.0f\n", camera.getX());
-    }
-    if (al_key_down(&keyState, ALLEGRO_KEY_LEFT)) {
-        camera.setX(camera.getX() - 2.0f);
+    // limit le joueur aux bords de du niveau
+    if (player.getX() < 0.0f) {
+        player.setX(0.0f);
     }
 
+    // Todo à modifier si scrolling verticale on va devoir detecter les écrans
+    //   ou il y'a du scrolling vertical et regarder si le perso y est ou non (surment dans levelXData.h)
+    // TODO: Gérer le scrolling vertical (haut <-> bas)
+    //   Sur un écran de scrolling vertical, le blocage à droite ne pourra plus utiliser MAP_WIDTH_TILES * TILE_SIZE
+    //   car la map ne sera pas finie horizontalement. Il faudra bloquer le perso à droite de l'écran de scrolling vertical
+    float levelWidth{MAP_WIDTH_TILES * TILE_SIZE};
+    if (player.getX() + player.getWidth() > levelWidth) {
+        player.setX(levelWidth - player.getWidth());
+    }
+
+    camera.follow(player);
+   
     // Limiter la caméra aux bords
     float maxCameraX = (MAP_WIDTH_TILES * TILE_SIZE) - 320;
     if (camera.getX() < 0) camera.setX(0);
@@ -72,6 +79,9 @@ void GamePlayState::render()
             );
         }
     }
+
+    // Dessiner le joueur
+    player.render(camera.getX(), camera.getY());
 
     // Dessiner la grille de débogage
     #ifdef DEBUG

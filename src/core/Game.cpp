@@ -5,6 +5,8 @@
 #ifdef DEBUG
 // Définition de la variable globale pour le debug log
 ALLEGRO_TEXTLOG* g_debugLog = nullptr;
+// Font globale pour affichage DEBUG
+ALLEGRO_FONT* g_debugFont = nullptr;
 #endif
 
 Game::Game()
@@ -14,13 +16,19 @@ Game::Game()
 Game::~Game()
 {
     // Nettoyage dans l'ordre inverse de création
-#ifdef DEBUG
-    if (debugLog) {
-        g_debugLog = nullptr;  // Invalider le pointeur global
-        al_close_native_text_log(debugLog);
-        debugLog = nullptr;
-    }
-#endif
+    #ifdef DEBUG
+        if (debugFont) {
+            g_debugFont = nullptr;  // Invalider le pointeur global
+            al_destroy_font(debugFont);
+            debugFont = nullptr;
+        }
+        if (debugLog) {
+            g_debugLog = nullptr;  // Invalider le pointeur global
+            al_close_native_text_log(debugLog);
+            debugLog = nullptr;
+        }
+    #endif
+
     if (timer) al_destroy_timer(timer);
     if (eventQueue) al_destroy_event_queue(eventQueue);
     if (virtualBuffer) al_destroy_bitmap(virtualBuffer);
@@ -49,14 +57,18 @@ bool Game::init()
         return false;
     }
 
-    // Obtenir la résolution du moniteur
+    al_init_font_addon();
+
+    // Obtenir la résolution de l'écran préféré
     ALLEGRO_MONITOR_INFO info;
-    al_get_monitor_info(0, &info);
+    al_get_monitor_info(PREFERRED_MONITOR, &info);
     int screen_w = info.x2 - info.x1;
     int screen_h = info.y2 - info.y1;
 
     // PLEIN ÉCRAN avec la résolution native
     al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+    // Forcer l'affichage sur l'écran préféré
+    al_set_new_display_adapter(PREFERRED_MONITOR);
     display = al_create_display(screen_w, screen_h);
     if (!display) {
         return false;
@@ -105,6 +117,13 @@ bool Game::init()
         al_append_native_text_log(debugLog, "Virtual resolution: 320x192\n");
         al_append_native_text_log(debugLog, "\n");
     }
+
+    // Créer la font built-in pour le HUD DEBUG
+    debugFont = al_create_builtin_font();
+    g_debugFont = debugFont;  // Exposer la font globalement
+    if (!debugFont) {
+        DEBUG_LOG("ERREUR: Impossible de créer la debug font!\n");
+    }
 #endif
 
     return true;
@@ -113,7 +132,6 @@ bool Game::init()
 void Game::handleInput()
 {
     ALLEGRO_EVENT event;
-
     // ATTENDRE un événement (bloquant) pour éviter de surcharger le CPU
     al_wait_for_event(eventQueue, &event);
 
@@ -135,8 +153,19 @@ void Game::handleInput()
         }
     } while (al_get_next_event(eventQueue, &event));
 
-    // TODO: Capturer l'état du clavier pour les contrôles du joueur
-    // Voir Phase 3.2 du plan de développement
+    ALLEGRO_KEYBOARD_STATE keyState;
+    al_get_keyboard_state(&keyState);
+    inputState.left = al_key_down(&keyState, ALLEGRO_KEY_Q);
+    inputState.right = al_key_down(&keyState, ALLEGRO_KEY_D);
+    inputState.up = al_key_down(&keyState, ALLEGRO_KEY_Z);
+    inputState.down = al_key_down(&keyState, ALLEGRO_KEY_S);
+    inputState.jump = al_key_down(&keyState, ALLEGRO_KEY_J);
+    inputState.attack = al_key_down(&keyState, ALLEGRO_KEY_H);
+    inputState.weaponSwitch = al_key_down(&keyState, ALLEGRO_KEY_F);
+    inputState.pause = al_key_down(&keyState, ALLEGRO_KEY_G);
+    inputState.debugDamage = al_key_down(&keyState, ALLEGRO_KEY_P); // à supprimer aprs le dev
+
+    // ici mettre en place une manete
 }
 
 void Game::render()
@@ -181,16 +210,15 @@ void Game::render()
         0              // pas de flip
     );
 
-    // debug
-    // DEBUG: Cadre vert pour visualiser la zone de rendu
-    al_draw_rectangle(
-        destX, destY,                          // Coin haut-gauche
-        destX + destWidth, destY + destHeight, // Coin bas-droit
-        al_map_rgb(0, 255, 0),                 // Vert vif
-        3                                       // Épaisseur 3 pixels
-    );
-    // Fin debug
-
+    #ifdef DEBUG
+        // DEBUG: Cadre vert pour visualiser la zone de rendu
+        al_draw_rectangle(
+            destX, destY,                          // Coin haut-gauche
+            destX + destWidth, destY + destHeight, // Coin bas-droit
+            al_map_rgb(0, 255, 0),                 // Vert vif
+            3                                       // Épaisseur 3 pixels
+        );
+    #endif
 
     // 4. Affichage
     al_flip_display();
@@ -211,7 +239,7 @@ void Game::run()
         // Fixed timestep
         while (accumulator >= FRAME_TIME) {
             handleInput();
-            stateManager.update();
+            stateManager.update(inputState);
             accumulator -= FRAME_TIME;
         }
 

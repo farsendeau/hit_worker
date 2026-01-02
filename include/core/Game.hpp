@@ -2,6 +2,7 @@
 #define GAME_HPP
 
 #include "../utils/constant.h"
+#include "../utils/InputState.hpp"
 #include "StateManager.hpp"
 
 class Game
@@ -24,24 +25,16 @@ class Game
         #ifdef DEBUG
                 // Debug logging
                 ALLEGRO_TEXTLOG* debugLog{nullptr};
+                // Debug font
+                ALLEGRO_FONT* debugFont{nullptr};
         #endif
-
-        // État des inputs (pour le gameplay)
-        struct InputState {
-            bool left{false};
-            bool right{false};
-            bool up{false};
-            bool down{false};
-            bool jump{false};
-            bool attack{false};
-            bool weaponSwitch{false};
-            bool pause{false};
-        } inputState;
 
         //==== Fonction Private====
         void render();
 
     public:
+        InputState inputState{};
+
         //==== Fonction Public====
         Game();
         ~Game();
@@ -57,7 +50,6 @@ class Game
         int getScreenHeight();
         void setScreenHeight(int height);
         StateManager& getStateManager();
-
 };
 
 #endif
