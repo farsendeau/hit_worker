@@ -258,7 +258,7 @@ Implémentation du personnage joueur avec:
 - [x] Sort avec JUMP ✅
 - [x] Sort si quitte la tile échelle ✅
 - [x] Pas de gravité sur échelle ✅
-- [ ] ⚠️ **BUG CONNU**: Centrage parfois incorrect sur échelle (Player.cpp:279)
+- [x] Centrage parfait sur échelle ✅ FIXÉ (Player.cpp:287 - recentrage à chaque frame)
 
 ### Tests Caméra
 - [x] Suit le joueur horizontalement ✅
