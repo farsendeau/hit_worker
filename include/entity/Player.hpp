@@ -51,6 +51,10 @@ class Player: public Entity
         // override des méthodes de virtuelles de Entity
         void update(const InputState &input, const Level &level) override;
         void render(float cameraX, float cameraY) const override;
+
+        // Méthodes helper pour la caméra
+        float getCenterX() const { return x + width / 2.0f; }
+        float getCenterY() const { return y + height / 2.0f; }
 };
 
 #endif // PLAYER_HPP

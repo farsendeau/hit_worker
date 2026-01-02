@@ -12,7 +12,7 @@ Camera::~Camera()
 
 void Camera::follow(const Player& player)
 {
-    // Centre sur le joueur
-    x = player.getX() - (VIRTUAL_WIDTH / 2.0f) + (player.getWidth() / 2.0f);
-    // les limits sont appliquées dans GamePlaySate::update()
+    // Centre la caméra sur le joueur
+    x = player.getCenterX() - (VIRTUAL_WIDTH / 2.0f);
+    // les limites sont appliquées dans GamePlayState::update()
 }

@@ -149,38 +149,46 @@ Implémentation du personnage joueur avec:
   - [x] Ne traverse pas le plafond
   - [ ] Kill tiles tuent le joueur (à implémenter)
 
-### 🪜 Système d'Échelles (2h)
+### 🪜 Système d'Échelles (2h) ✅ TERMINÉ
 
-- [ ] **7.1** Implémenter `Player::checkLadderCollision()`
-  - [ ] Vérifier si tile au centre = ID 2
-  - [ ] Utiliser `getVisualTileAt(tileX, tileY)`
-- [ ] **7.2** Implémenter `Player::handleLadderMovement()`
-  - [ ] Monter avec input.up (velocityY = -1.5)
-  - [ ] Descendre avec input.down (velocityY = 1.5)
-  - [ ] État = CLIMB
-  - [ ] Sortir si jump ou plus sur échelle
-- [ ] **7.3** Intégrer dans `Player::update()`
-  - [ ] Vérifier `input.up + checkLadderCollision()` pour entrer
-  - [ ] Si `onLadder`, appeler handleLadderMovement() et return
-- [ ] **7.4** **TEST**:
-  - [ ] Monte/descend échelles
-  - [ ] Sort avec jump
-  - [ ] Couleur jaune quand sur échelle
+- [x] **7.1** Fix `Level::isLadderAt()` (Level.cpp:18-22)
+  - [x] Correction: appeler fonction globale `::isLadderAt(tileX, tileY)`
+  - [x] Retournait toujours false avant le fix
+- [x] **7.2** Implémenter `Player::ladderProcess()` (Player.cpp:163-241)
+  - [x] Détection échelle au centre du joueur
+  - [x] Entrée sur échelle avec DOWN (toujours) ou UP (si onGround || velocityY >= 0)
+  - [x] Montée avec UP à -PLAYER_CLIMB_SPEED (-1.5)
+  - [x] Descente avec DOWN à +PLAYER_CLIMB_SPEED (+1.5)
+  - [x] Sortie automatique en haut avec repositionnement
+  - [x] Sortie avec JUMP (velocityY = PLAYER_JUMP_VELOCITY)
+  - [x] Centrage horizontal sur l'échelle
+- [x] **7.3** Intégrer dans `Player::update()`
+  - [x] Appel `ladderProcess(input, level)` ligne 56
+  - [x] Gravité désactivée si onLadder (lignes 87-93)
+  - [x] Mouvement horizontal bloqué si onLadder (lignes 22-35)
+  - [x] Sommet d'échelle = plateforme one-way (lignes 119-134)
+- [x] **7.4** **TEST**:
+  - [x] Monte/descend échelles à vitesse constante
+  - [x] Sort avec jump
+  - [x] Sortie automatique en haut
+  - [x] Sommet d'échelle solide (sauf avec DOWN)
+  - [x] Pas de resaut automatique après sortie en haut
 
-### 📷 Caméra Integration (1h)
+### 📷 Caméra Integration (1h) ✅ TERMINÉ
 
-- [ ] **8.1** Modifier `include/level/Camera.hpp`
-  - [ ] Ajouter forward declaration `class Player;`
-  - [ ] Modifier signature: `void focusPlayer(const Player& player);`
-- [ ] **8.2** Implémenter `Camera::focusPlayer()` dans `src/level/Camera.cpp`
-  - [ ] Centrer caméra sur joueur
-  - [ ] Limiter aux bords du niveau (0 à maxCameraX)
-- [ ] **8.3** Ajouter `Player::getCenterX()` et `getCenterY()`
-  - [ ] Retourner `x + width/2` et `y + height/2`
-- [ ] **8.4** Modifier `GamePlayState::update()`
-  - [ ] Retirer contrôle manuel caméra (lignes 23-34)
-  - [ ] Appeler `camera.focusPlayer(player)`
-- [ ] **8.5** **TEST**: Caméra suit le joueur en scrolling
+- [x] **8.1** Modifier `include/level/Camera.hpp`
+  - [x] Forward declaration `class Player;` présente (ligne 4)
+  - [x] Méthode `void follow(const Player& player);` (ligne 15)
+- [x] **8.2** Implémenter `Camera::follow()` dans `src/level/Camera.cpp`
+  - [x] Centre caméra sur joueur avec `getCenterX()` (ligne 16)
+  - [x] Limites appliquées dans GamePlayState::update() (lignes 38-41)
+- [x] **8.3** Ajouter `Player::getCenterX()` et `getCenterY()` (Player.hpp:56-57)
+  - [x] `getCenterX()` retourne `x + width / 2.0f`
+  - [x] `getCenterY()` retourne `y + height / 2.0f`
+- [x] **8.4** Modifier `GamePlayState::update()`
+  - [x] Pas de contrôle manuel caméra
+  - [x] Appel `camera.follow(player)` (ligne 36)
+- [x] **8.5** **TEST**: Caméra suit le joueur en scrolling horizontal fluide
 
 ### 💚 Polish et Système de Vie (2h)
 
