@@ -264,7 +264,7 @@ Implémentation du personnage joueur avec:
 - [x] Suit le joueur horizontalement ✅
 - [x] Centrée sur le joueur ✅
 - [x] S'arrête aux bords du niveau (X=0 et X=maxCamera) ✅
-- [ ] ⚠️ **PERFORMANCE**: Ralentissements possibles (WSL2 ou mode DEBUG?)
+- [x] Performance optimale ✅ FIXÉ (retiré log DEBUG 60fps à Player.cpp:283)
 
 ### Tests Combat/Vie
 - [x] Invincibilité dure 30 frames (0.5 sec) ✅
