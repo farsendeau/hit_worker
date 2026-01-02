@@ -1,6 +1,6 @@
 # TODO - Phase 3 : Joueur et Physique
 
-**Statut**: En cours
+**Statut**: ✅ Terminé
 **Temps estimé**: 12-15 heures
 **Branch**: player_physical
 
@@ -382,6 +382,5 @@ CMakeLists.txt (ou Makefile)
 
 ---
 
-**Date de début**: [À remplir]
-**Date de fin**: [À remplir]
-**Développeur**: [À remplir]
+**Date de fin**: 2026-01-02
+**Statut final**: Toutes les fonctionnalités implémentées et testées avec succès
