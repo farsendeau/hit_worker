@@ -25,6 +25,8 @@ class Game
         #ifdef DEBUG
                 // Debug logging
                 ALLEGRO_TEXTLOG* debugLog{nullptr};
+                // Debug font
+                ALLEGRO_FONT* debugFont{nullptr};
         #endif
 
         //==== Fonction Private====
@@ -48,7 +50,6 @@ class Game
         int getScreenHeight();
         void setScreenHeight(int height);
         StateManager& getStateManager();
-
 };
 
 #endif

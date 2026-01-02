@@ -5,6 +5,8 @@
 #ifdef DEBUG
 // Définition de la variable globale pour le debug log
 ALLEGRO_TEXTLOG* g_debugLog = nullptr;
+// Font globale pour affichage DEBUG
+ALLEGRO_FONT* g_debugFont = nullptr;
 #endif
 
 Game::Game()
@@ -14,13 +16,19 @@ Game::Game()
 Game::~Game()
 {
     // Nettoyage dans l'ordre inverse de création
-#ifdef DEBUG
-    if (debugLog) {
-        g_debugLog = nullptr;  // Invalider le pointeur global
-        al_close_native_text_log(debugLog);
-        debugLog = nullptr;
-    }
-#endif
+    #ifdef DEBUG
+        if (debugFont) {
+            g_debugFont = nullptr;  // Invalider le pointeur global
+            al_destroy_font(debugFont);
+            debugFont = nullptr;
+        }
+        if (debugLog) {
+            g_debugLog = nullptr;  // Invalider le pointeur global
+            al_close_native_text_log(debugLog);
+            debugLog = nullptr;
+        }
+    #endif
+
     if (timer) al_destroy_timer(timer);
     if (eventQueue) al_destroy_event_queue(eventQueue);
     if (virtualBuffer) al_destroy_bitmap(virtualBuffer);
@@ -48,6 +56,8 @@ bool Game::init()
     if (!al_init_native_dialog_addon()) {
         return false;
     }
+
+    al_init_font_addon();
 
     // Obtenir la résolution de l'écran préféré
     ALLEGRO_MONITOR_INFO info;
@@ -107,6 +117,13 @@ bool Game::init()
         al_append_native_text_log(debugLog, "Virtual resolution: 320x192\n");
         al_append_native_text_log(debugLog, "\n");
     }
+
+    // Créer la font built-in pour le HUD DEBUG
+    debugFont = al_create_builtin_font();
+    g_debugFont = debugFont;  // Exposer la font globalement
+    if (!debugFont) {
+        DEBUG_LOG("ERREUR: Impossible de créer la debug font!\n");
+    }
 #endif
 
     return true;
@@ -146,6 +163,7 @@ void Game::handleInput()
     inputState.attack = al_key_down(&keyState, ALLEGRO_KEY_H);
     inputState.weaponSwitch = al_key_down(&keyState, ALLEGRO_KEY_F);
     inputState.pause = al_key_down(&keyState, ALLEGRO_KEY_G);
+    inputState.debugDamage = al_key_down(&keyState, ALLEGRO_KEY_P); // à supprimer aprs le dev
 
     // ici mettre en place une manete
 }

@@ -18,6 +18,18 @@ void Player::update(const InputState &input, const Level &level)
     // 1. Réinitialiser velocityX chaque frame
     velocityX = 0.0f;
 
+    #ifdef DEBUG
+        // TEST: Touche P pour infliger 10 dégâts
+        static bool debugDamagePressed = false;
+        if (input.debugDamage && !debugDamagePressed) {
+            takeDamage(10);
+            debugDamagePressed = true;
+        }
+        if (!input.debugDamage) {
+            debugDamagePressed = false;
+        }
+    #endif
+
     //==== MOVE RIGHT/LEFT ====
     if (input.left) {
         // Seulement si pas sur echelle
@@ -143,21 +155,72 @@ void Player::update(const InputState &input, const Level &level)
     } else {
         onGround = false;
     }
+
+    // Décrémenter invincibilité
+    if (invincibilityFrames > 0) {
+        invincibilityFrames--;
+    }
 }
 
 void Player::render(float cameraX, float cameraY) const
 {
-    // Dessine un rectangle vert (position écran = position niveau - caméra)
     float screenX = x - cameraX;
     float screenY = y - cameraY;
 
-    al_draw_filled_rectangle(
-        screenX,
-        screenY,
-        screenX + width,
-        screenY + height,
-        al_map_rgb(0, 255, 0) // vert
-    );
+    // Clignotement si invincible (visible 1 frame sur 2)
+    bool visible = true;
+    if (invincibilityFrames > 0) {
+        visible = (invincibilityFrames % 2 == 0);
+    }
+
+    if (visible) {
+        // Couleur selon l'état
+        ALLEGRO_COLOR color;
+        if (onLadder) {
+            color = al_map_rgb(255, 255, 0);  // Jaune sur échelle
+        } else if (onGround) {
+            color = al_map_rgb(0, 255, 0);    // Vert au sol
+        } else {
+            color = al_map_rgb(0, 255, 255);  // Cyan en l'air
+        }
+
+        al_draw_filled_rectangle(
+            screenX, screenY,
+            screenX + width, screenY + height,
+            color
+        );
+    }
+
+    #ifdef DEBUG
+        // HUD DEBUG en haut à gauche (position fixe)
+        if (g_debugFont) {
+            char buffer[64];
+            snprintf(buffer, sizeof(buffer), "HP:%d Lives:%d Inv:%d", hp, lives, invincibilityFrames);
+            al_draw_text(g_debugFont, al_map_rgb(255, 255, 255), 5, 5, 0, buffer);
+        }
+
+        // Hitbox rouge
+        al_draw_rectangle(
+            screenX, screenY,
+            screenX + width, screenY + height,
+            al_map_rgb(255, 0, 0), 1
+        );
+
+        // Flèche de direction
+        float arrowX = screenX + width / 2.0f;
+        float arrowY = screenY + height / 2.0f;
+        float arrowEndX = arrowX + (facingRight ? 10.0f : -10.0f);
+        
+        al_draw_line(arrowX, arrowY, arrowEndX, arrowY, al_map_rgb(255, 255, 0), 2);
+        // Pointe de flèche
+        if (facingRight) {
+            al_draw_line(arrowEndX, arrowY, arrowEndX - 3, arrowY - 3, al_map_rgb(255, 255, 0), 2);
+            al_draw_line(arrowEndX, arrowY, arrowEndX - 3, arrowY + 3, al_map_rgb(255, 255, 0), 2);
+        } else {
+            al_draw_line(arrowEndX, arrowY, arrowEndX + 3, arrowY - 3, al_map_rgb(255, 255, 0), 2);
+            al_draw_line(arrowEndX, arrowY, arrowEndX + 3, arrowY + 3, al_map_rgb(255, 255, 0), 2);
+        }
+    #endif
 }
 
 void Player::ladderProcess(const InputState &input, const Level &level)
@@ -237,5 +300,52 @@ void Player::ladderProcess(const InputState &input, const Level &level)
             currentState = State::IDLE;
         }
     }
+}
 
+void Player::takeDamage(int damage) 
+{
+    // Si invincible, ingorer les dégats
+    if (invincibilityFrames > 0) {
+        DEBUG_LOG("PlayerInvicible, degâts ignorés\n");
+        return;
+    }
+
+    // Réduire HP
+    hp -= damage;
+    DEBUG_LOG("Player prend %d dégâts: HP: %d\n", damage, hp);
+
+    // Active invincibilité
+    invincibilityFrames = INVINCIBILITY_FRAMES;
+
+    // Si mort
+    if (hp <= 0) {
+        --lives;
+        DEBUG_LOG("Player mort! Lives restantes: %d\n", lives);
+
+        if (lives > 0) {
+            respawn();
+        } else {
+             DEBUG_LOG("GAME OVER!\n");
+            // TODO: Gérer game over plus tard
+        }
+    }
+}
+
+void Player::respawn()
+{
+    // Reset position de départ
+    x = 32.0f;
+    y = 128.0f;
+
+    // Reset velocités
+    velocityX = 0.0f;
+    velocityY = 0.0f;
+
+    // Restore HP
+    hp = 100;
+
+    // Activer invincibilité
+    invincibilityFrames = INVINCIBILITY_FRAMES;
+
+    DEBUG_LOG("Player respawn à (%.0f, %.0f)\n", x, y);
 }
