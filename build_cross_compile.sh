@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script de cross-compilation pour Windows depuis Linux (WSL)
+# lancer le script ./build_cross_compile.sh
 
 echo "========================================"
 echo "Cross-compilation pour Windows"
@@ -14,7 +15,7 @@ fi
 
 # Chemins
 ALLEGRO_WIN="/mnt/e/Projets/c/vendor/allegro-5.2.11"
-OUTPUT_DIR="/mnt/c/Users/sixpo/Desktop"
+OUTPUT_DIR="/mnt/c/Users/sixpo/Desktop/hit_worker"
 BUILD_TYPE="${BUILD_TYPE:-Release}"
 
 echo ""
@@ -40,7 +41,8 @@ cmake .. \
     -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw.cmake \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DCUSTOM_OUTPUT_DIR="$OUTPUT_DIR" \
-    -DALLEGRO_WIN_PREFIX="$ALLEGRO_WIN"
+    -DALLEGRO_WIN_PREFIX="$ALLEGRO_WIN" \
+    -DDEBUG_LOG=OFF
 
 if [ $? -ne 0 ]; then
     echo "Erreur lors de la configuration!"
@@ -56,6 +58,18 @@ if [ $? -ne 0 ]; then
     echo "Erreur lors de la compilation!"
     exit 1
 fi
+
+# Copier l'exécutable vers le dossier de sortie Windows
+echo ""
+echo "Copie de l'exécutable vers Windows..."
+mkdir -p "$OUTPUT_DIR"
+cp hit_worker.exe "$OUTPUT_DIR/" || {
+    echo "ERREUR: Impossible de copier l'exécutable! il faut le copier à la main \
+        desactiver avast \
+        cp /home/karigane/hit_worker/build_cross/hit_worker.exe /mnt/c/Users/sixpo/Desktop/hit_worker/
+    "
+    #exit 1
+}
 
 # Copier les DLLs nécessaires
 echo ""
@@ -75,6 +89,13 @@ cp "$ALLEGRO_WIN/bin/allegro_image${DLL_SUFFIX}-5.2.dll" "$OUTPUT_DIR/" 2>/dev/n
 cp "$ALLEGRO_WIN/bin/allegro_main${DLL_SUFFIX}-5.2.dll" "$OUTPUT_DIR/" 2>/dev/null
 cp "$ALLEGRO_WIN/bin/allegro_primitives${DLL_SUFFIX}-5.2.dll" "$OUTPUT_DIR/" 2>/dev/null
 cp "$ALLEGRO_WIN/bin/allegro_ttf${DLL_SUFFIX}-5.2.dll" "$OUTPUT_DIR/" 2>/dev/null
+cp /usr/lib/gcc/x86_64-w64-mingw32/13-win32/libstdc++-6.dll $OUTPUT_DIR
+cp /usr/lib/gcc/x86_64-w64-mingw32/13-win32/libgcc_s_seh-1.dll $OUTPUT_DIR
+cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $OUTPUT_DIR 
+
+
+echo "Copie des assets..."
+cp -r ../asset "$OUTPUT_DIR/"
 
 echo ""
 echo "========================================"

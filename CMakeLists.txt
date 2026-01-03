@@ -16,9 +16,14 @@ else()
 endif()
 
 # Chemin de sortie personnalisable pour Windows
-if(PLATFORM_WINDOWS)
+if(PLATFORM_WINDOWS AND NOT CMAKE_CROSSCOMPILING)
+    # Compilation native Windows : sortie directe vers le dossier personnalisé
     set(CUSTOM_OUTPUT_DIR "C:/Users/sixpo/Desktop" CACHE PATH "Custom output directory for executable")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CUSTOM_OUTPUT_DIR})
+elseif(CMAKE_CROSSCOMPILING)
+    # Cross-compilation : sortie locale, sera copiée après
+    set(CUSTOM_OUTPUT_DIR "" CACHE PATH "Custom output directory for executable")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 else()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 endif()
