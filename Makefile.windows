@@ -1,0 +1,62 @@
+# Makefile pour la compilation Windows
+# Utilisation: make -f Makefile.windows
+
+# Variables de configuration
+BUILD_DIR = build_win
+OUTPUT_DIR = C:/Users/sixpo/Desktop
+ALLEGRO_DIR = C:/allegro
+MINGW_PATH = E:/Softs/MinGW
+CMAKE = cmake
+BUILD_TYPE = Release
+
+# Générateur CMake (MinGW par défaut, peut être changé pour "Visual Studio 17 2022")
+GENERATOR = MinGW Makefiles
+
+.PHONY: all configure build clean rebuild help
+
+# Cible par défaut
+all: configure build
+
+# Configuration du projet
+configure:
+	@echo "Configuration du projet pour Windows..."
+	@if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+	@set PATH=$(MINGW_PATH)\bin;%PATH% && cd $(BUILD_DIR) && $(CMAKE) .. -G "$(GENERATOR)" \
+		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
+		-DCUSTOM_OUTPUT_DIR="$(OUTPUT_DIR)" \
+		-DALLEGRO_PREFIX="$(ALLEGRO_DIR)" \
+		-DCMAKE_C_COMPILER="$(MINGW_PATH)/bin/gcc.exe" \
+		-DCMAKE_CXX_COMPILER="$(MINGW_PATH)/bin/g++.exe"
+
+# Compilation
+build:
+	@echo "Compilation du projet..."
+	@cd $(BUILD_DIR) && $(CMAKE) --build . --config $(BUILD_TYPE)
+	@echo "Compilation terminée! Executable: $(OUTPUT_DIR)\hit_worker.exe"
+
+# Nettoyage
+clean:
+	@echo "Nettoyage..."
+	@if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
+	@echo "Nettoyage terminé!"
+
+# Recompilation complète
+rebuild: clean all
+
+# Aide
+help:
+	@echo Usage du Makefile Windows:
+	@echo   make -f Makefile.windows          - Configure et compile le projet
+	@echo   make -f Makefile.windows configure - Configure uniquement
+	@echo   make -f Makefile.windows build     - Compile uniquement
+	@echo   make -f Makefile.windows clean     - Nettoie les fichiers de build
+	@echo   make -f Makefile.windows rebuild   - Nettoie et recompile
+	@echo.
+	@echo Variables personnalisables:
+	@echo   OUTPUT_DIR  - Chemin de sortie de l'executable (defaut: C:/Users/sixpo/Desktop)
+	@echo   ALLEGRO_DIR - Chemin d'installation d'Allegro (defaut: C:/allegro)
+	@echo   BUILD_TYPE  - Type de build: Release ou Debug (defaut: Release)
+	@echo   GENERATOR   - Generateur CMake (defaut: MinGW Makefiles)
+	@echo.
+	@echo Exemple:
+	@echo   make -f Makefile.windows OUTPUT_DIR="D:/Games" ALLEGRO_DIR="C:/libs/allegro"
