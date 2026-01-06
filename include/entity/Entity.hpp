@@ -34,6 +34,7 @@ class Entity
         float getVelocityX() const { return velocityX; }
         float getVelocityY() const { return velocityY; }
         float getWidth() const { return width; }
+        float getHeight() const { return height; }
         bool isOnGround() const { return onGround; }
 };
 

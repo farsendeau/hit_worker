@@ -329,8 +329,6 @@ void Player::ladderProcess(const InputState &input, const Level &level)
         // Sortir de l'échelle avec JUMP
         if (input.jump) {
             onLadder = false;
-            //velocityY = PLAYER_JUMP_VELOCITY; // -6.0f
-            //jumpPressed = false;
             currentState = State::FALL;
         }
 

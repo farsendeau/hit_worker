@@ -47,12 +47,19 @@ void GamePlayState::update(const InputState &input)
     #endif
 
     // 1. Update joueur (physique, input, collisions)
-    player.update(input, level);
+    if (isTransitioning) {
+        // Bloquer les inputs pendant la transition verticale
+        InputState emptyInput{};
+        player.update(emptyInput, level);
+    } else {
+        // Inputs normaux
+        player.update(input, level);
+    }
 
     // 2. Si en transition verticale
     if (isTransitioning) {
-       
-        updateVerticalTransition();  // Scroll la caméra Y
+
+        updateVerticalTransition();  // Scroll la caméra Y + déplace le joueur
 
         // Continuer à suivre le joueur horizontalement
         camera.setX(player.getCenterX() - VIRTUAL_WIDTH / 2.0f);
@@ -257,9 +264,12 @@ void GamePlayState::startVerticalTransition(int newZoneId, bool goingDown)
     targetZoneId = newZoneId;
     transitionDirection = TransitionDirection::VERTICAL;
 
+    // NE PAS téléporter le joueur! Il reste à sa position actuelle
+    // et se déplacera progressivement pendant updateVerticalTransition()
+
     #ifdef DEBUG
-    DEBUG_LOG("Vertical transition: Zone %d → Zone %d (%s)\n",
-              currentZoneId, targetZoneId, goingDown ? "DOWN" : "UP");
+    DEBUG_LOG("Vertical transition: Zone %d → Zone %d (%s), Player Y: %.1f\n",
+              currentZoneId, targetZoneId, goingDown ? "DOWN" : "UP", player.getY());
     #endif
 }
 
@@ -279,6 +289,11 @@ void GamePlayState::updateVerticalTransition()
     if (currentCameraY < targetCameraY) {
         // Scroll vers le bas
         camera.setY(currentCameraY + VERTICAL_SCROLL_SPEED);
+
+        // NE PAS bouger le joueur en absolu! Il reste fixe
+        // Résultat: position relative du joueur "remonte" sur l'écran
+        // (il part du bas de l'écran et arrive en haut)
+
         if (camera.getY() >= targetCameraY) {
             camera.setY(targetCameraY);
             finishTransition();
@@ -286,6 +301,11 @@ void GamePlayState::updateVerticalTransition()
     } else if (currentCameraY > targetCameraY) {
         // Scroll vers le haut
         camera.setY(currentCameraY - VERTICAL_SCROLL_SPEED);
+
+        // NE PAS bouger le joueur en absolu! Il reste fixe
+        // Résultat: position relative du joueur "descend" sur l'écran
+        // (il part du haut de l'écran et arrive en bas)
+
         if (camera.getY() <= targetCameraY) {
             camera.setY(targetCameraY);
             finishTransition();
@@ -302,12 +322,28 @@ void GamePlayState::updateVerticalTransition()
  */
 void GamePlayState::finishTransition()
 {
+    // NE PAS repositionner le joueur! Il reste où il est naturellement
+    // après le scroll (en haut pour scroll DOWN, en bas pour scroll UP)
+
+    // Vérifier que le joueur est bien dans la zone cible
+    const CameraZone& targetZone = cameraZones[targetZoneId];
+    float playerCenterY = player.getCenterY();
+
+    // Si le joueur est hors de la zone cible, le repositionner au bord
+    if (playerCenterY < targetZone.y) {
+        // Trop haut, mettre en haut de la zone
+        player.setY(targetZone.y + 5.0f);
+    } else if (playerCenterY >= targetZone.y + targetZone.height) {
+        // Trop bas, mettre en bas de la zone
+        player.setY(targetZone.y + targetZone.height - player.getHeight() - 5.0f);
+    }
+
     currentZoneId = targetZoneId;
     isTransitioning = false;
     targetZoneId = -1;
 
     #ifdef DEBUG
-    DEBUG_LOG("Transition finished. Current zone: %d\n", currentZoneId);
+    DEBUG_LOG("Transition finished. Current zone: %d, Player Y: %.1f\n", currentZoneId, player.getY());
     #endif
 }
 
