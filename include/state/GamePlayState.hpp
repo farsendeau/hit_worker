@@ -34,6 +34,13 @@ class GamePlayState: public AbstractState
         //Player player{32.0f, 128.0f};  // Position de départ (2 tiles à droite, 8 tiles en bas)
         Player player{70.0f, 70.0f};
 
+        // Mode frame by frame (debug)
+        #ifdef DEBUG
+        bool frameByFrameMode{false};      // Mode frame par frame activé/désactivé
+        bool mKeyPreviouslyPressed{false}; // Pour détecter le toggle de M
+        bool nextFrameKeyPreviouslyPressed{false}; // Pour détecter le toggle de RIGHT arrow
+        #endif
+
 
     // ==== METHODE ====
     public:

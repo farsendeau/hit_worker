@@ -11,6 +11,8 @@ struct InputState {
     bool weaponSwitch{false};
     bool pause{false};
     bool debugDamage{false}; // à supprimer après le dev
+    bool debugFrameByFrame{false}; // Touche M pour activer/désactiver le mode frame par frame
+    bool debugNextFrame{false}; // Touche RIGHT arrow pour avancer d'une frame
 };
 
 #endif // INPUT_STATE

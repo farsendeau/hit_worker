@@ -164,6 +164,8 @@ void Game::handleInput()
     inputState.weaponSwitch = al_key_down(&keyState, ALLEGRO_KEY_F);
     inputState.pause = al_key_down(&keyState, ALLEGRO_KEY_G);
     inputState.debugDamage = al_key_down(&keyState, ALLEGRO_KEY_P); // à supprimer aprs le dev
+    inputState.debugFrameByFrame = al_key_down(&keyState, ALLEGRO_KEY_M); // Mode frame par frame (debug)
+    inputState.debugNextFrame = al_key_down(&keyState, ALLEGRO_KEY_RIGHT); // Avancer d'une frame (debug)
 
     // ici mettre en place une manete
 }
