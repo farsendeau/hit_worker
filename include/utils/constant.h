@@ -44,6 +44,12 @@ constexpr float PLAYER_HITBOX_HEIGHT{28.0f}; // changer si la hauteur du perso c
 constexpr float PLAYER_WIDTH{16.0f};
 constexpr float PLAYER_HEIGHT{32.0f};
 
+// Camera zones et transition
+constexpr float ZONE_WIDTH{VIRTUAL_WIDTH};
+constexpr float ZONE_HEIGHT{VIRTUAL_HEIGHT};
+// Vitesses de scrolling pendant les transitions
+constexpr float VERTICAL_SCROLL_SPEED{4.0f};
+
 // ========== DEBUG ==========
 #ifdef DEBUG
     // Variable globale pour le debug log (définie dans Game.cpp)

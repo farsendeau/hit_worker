@@ -20,21 +20,21 @@ class Entity
         bool facingRight{true};// Regarde à droite ?
         /* data */
     public:
-    Entity(float startX, float startY, float initWidth, float initHeight, float initVelocityX);
-    virtual ~Entity() = default;
+        Entity(float startX, float startY, float initWidth, float initHeight, float initVelocityX);
+        virtual ~Entity() = default;
 
-    virtual void update(const InputState& input, const Level& level) = 0;
-    virtual void render(float cameraX, float cameraY) const = 0;
+        virtual void update(const InputState& input, const Level& level) = 0;
+        virtual void render(float cameraX, float cameraY) const = 0;
 
-    // Getters communs
-    float getX() const { return x; }
-    float getY() const { return y; }
-    void setX(float value) { x = value; }
-    void setY(float value) { y = value; }
-    float getVelocityX() const { return velocityX; }
-    float getVelocityY() const { return velocityY; }
-    float getWidth() const { return width; }
-    bool isOnGround() const { return onGround; }
+        // Getters communs
+        float getX() const { return x; }
+        float getY() const { return y; }
+        void setX(float value) { x = value; }
+        void setY(float value) { y = value; }
+        float getVelocityX() const { return velocityX; }
+        float getVelocityY() const { return velocityY; }
+        float getWidth() const { return width; }
+        bool isOnGround() const { return onGround; }
 };
 
 #endif // ENTITY_HPP

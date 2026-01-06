@@ -60,6 +60,8 @@ class Player: public Entity
         void takeDamage(int damage);
         void respawn();
         void checkKillCollision(const Level &level);
+
+        int getHp() const { return hp; }
 };
 
 #endif // PLAYER_HPP
