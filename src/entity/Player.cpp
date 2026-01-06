@@ -258,12 +258,12 @@ void Player::ladderProcess(const InputState &input, const Level &level)
     bool isOnLadder = level.isLadderAt(centerX, centerY);
 
     // Entrée sur l'échelle:
-    // - Avec DOWN (descendre)
-    // - Ou avec UP mais seulement si on monte depuis le bas (onGround ou velocityY > 0)
+    // - Avec DOWN (descendre depuis le haut) SEULEMENT si pas au sol
+    // - Ou avec UP (monter depuis le bas) si au sol ou en train de tomber
     bool canEnterLadder = false;
     if (isOnLadder && !onLadder) {
-        if (input.down) {
-            // Peut toujours entrer en descendant
+        if (input.down && !onGround) {
+            // Peut entrer en descendant SEULEMENT si pas au sol (descendre depuis le haut)
             canEnterLadder = true;
         } else if (input.up && (onGround || velocityY >= 0)) {
             // Peut entrer en montant SEULEMENT si au sol ou en train de tomber
@@ -309,15 +309,29 @@ void Player::ladderProcess(const InputState &input, const Level &level)
         }
         // Descend avec DOWN
         else if (input.down) {
-            velocityY = PLAYER_CLIMB_SPEED;   // +1.5
+            // Vérifier s'il y a une échelle en dessous du centre
+            int belowCenterY = centerY + 1;
+            bool ladderBelow = level.isLadderAt(centerX, belowCenterY);
+
+            if (!ladderBelow || onGround) {
+                // Fin de l'échelle (sol atteint), sortir en bas
+                onLadder = false;
+                onGround = true;
+                velocityY = 0.0f;
+                currentState = State::IDLE;
+                DEBUG_LOG(">>> SORTIE EN BAS DE L'ECHELLE <<<\n");
+            } else {
+                // Il y a une échelle en dessous, continuer à descendre
+                velocityY = PLAYER_CLIMB_SPEED;   // +1.5
+            }
         }   
 
         // Sortir de l'échelle avec JUMP
         if (input.jump) {
             onLadder = false;
-            velocityY = PLAYER_JUMP_VELOCITY; // -6.0f
-            jumpPressed = true;
-            currentState = State::JUMP;
+            //velocityY = PLAYER_JUMP_VELOCITY; // -6.0f
+            //jumpPressed = false;
+            currentState = State::FALL;
         }
 
         // sortir automatiquement si plus sur échelle

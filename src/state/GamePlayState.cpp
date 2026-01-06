@@ -5,8 +5,16 @@ GamePlayState::GamePlayState()
     std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
     setTileset(filename);
 
+    // Trouver la zone de départ du joueur
+    currentZoneId = findCameraZone(player.getCenterX(), player.getCenterY());
+
+    // Positionner la caméra sur la zone de départ
+    const CameraZone& startZone = cameraZones[currentZoneId];
+    camera.setY(startZone.y);
+
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
+    DEBUG_LOG("Player starting in zone: %d (x=%.0f, y=%.0f)\n", currentZoneId, startZone.x, startZone.y);
 }
 
 GamePlayState::~GamePlayState()
@@ -15,30 +23,75 @@ GamePlayState::~GamePlayState()
 
 void GamePlayState::update(const InputState &input)
 {
-    // Récupérer l'état actuel du clavier
+    // 1. Update joueur (physique, input, collisions)
     player.update(input, level);
 
-    // limit le joueur aux bords de du niveau
-    if (player.getX() < 0.0f) {
-        player.setX(0.0f);
+    // 2. Si en transition verticale
+    if (isTransitioning) {
+       
+        updateVerticalTransition();  // Scroll la caméra Y
+
+        // Continuer à suivre le joueur horizontalement
+        camera.setX(player.getCenterX() - VIRTUAL_WIDTH / 2.0f);
+
+        // Limiter X aux bords de la zone courante
+        const CameraZone& zone = cameraZones[currentZoneId];
+        if (camera.getX() < zone.x) {
+            camera.setX(zone.x);
+        }
+        if (camera.getX() + VIRTUAL_WIDTH > zone.x + zone.width) {
+            camera.setX(zone.x + zone.width - VIRTUAL_WIDTH);
+        }
+
+        // Appliquer les boundaries du joueur
+        applyZoneBoundaries();
+        return;
     }
 
-    // Todo à modifier si scrolling verticale on va devoir detecter les écrans
-    //   ou il y'a du scrolling vertical et regarder si le perso y est ou non (surment dans levelXData.h)
-    // TODO: Gérer le scrolling vertical (haut <-> bas)
-    //   Sur un écran de scrolling vertical, le blocage à droite ne pourra plus utiliser MAP_WIDTH_TILES * TILE_SIZE
-    //   car la map ne sera pas finie horizontalement. Il faudra bloquer le perso à droite de l'écran de scrolling vertical
-    float levelWidth{MAP_WIDTH_TILES * TILE_SIZE};
-    if (player.getX() + player.getWidth() > levelWidth) {
-        player.setX(levelWidth - player.getWidth());
+    // 3. Détection des transitions de zone
+    detectZoneChange();
+
+    // 4. Si une transition vient de commencer
+    if (isTransitioning) {
+        return;
     }
 
+    // 5. Mode normal: caméra suit le joueur horizontalement
+    const CameraZone& currentZone = cameraZones[currentZoneId];
+
+    // Suivre le joueur horizontalement
     camera.follow(player);
-   
-    // Limiter la caméra aux bords
-    float maxCameraX = (MAP_WIDTH_TILES * TILE_SIZE) - 320;
-    if (camera.getX() < 0) camera.setX(0);
+
+    // Limiter la caméra selon les zones adjacentes
+    // Si pas de zone à droite, bloquer au bord droit de la zone actuelle
+    float maxCameraX;
+    if (currentZone.next_zone_right >= 0) {
+        // Zone à droite existe, scrolling libre jusqu'au bout du niveau
+        maxCameraX = (MAP_WIDTH_TILES * TILE_SIZE) - VIRTUAL_WIDTH;
+    } else {
+        // Pas de zone à droite, bloquer à cette zone
+        maxCameraX = currentZone.x + currentZone.width - VIRTUAL_WIDTH;
+    }
+
+    // Si pas de zone à gauche, bloquer au bord gauche de la zone actuelle
+    float minCameraX;
+    if (currentZone.next_zone_left >= 0) {
+        // Zone à gauche existe, scrolling libre jusqu'au début
+        minCameraX = 0;
+    } else {
+        // Pas de zone à gauche, bloquer à cette zone
+        minCameraX = currentZone.x;
+    }
+
+    // Appliquer les limites
+    if (camera.getX() < minCameraX) camera.setX(minCameraX);
     if (camera.getX() > maxCameraX) camera.setX(maxCameraX);
+
+    // Fixer Y à la position de la zone
+    camera.setY(currentZone.y);
+
+    // 6. Limiter le joueur aux bords de la zone
+    applyZoneBoundaries();
 }
 
 void GamePlayState::render()
@@ -122,5 +175,153 @@ void GamePlayState::setTileset(std::string &filename)
     if (!tileset) {
         fprintf(stderr, "ERREUR: Impossible de charger le tileset '%s'\n", filename.c_str());
         fprintf(stderr, "Vérifiez que le fichier existe et que le chemin est correct.\n");
+    }
+}
+
+/**
+ * Détecte les changements de zone (horizontal ET vertical)
+ * Utilise findCameraZone() pour détecter la vraie zone du joueur
+ */
+void GamePlayState::detectZoneChange()
+{
+    // Trouver la zone réelle du joueur basée sur sa position
+    int actualZoneId = findCameraZone(player.getCenterX(), player.getCenterY());
+
+    // Si pas de changement de zone, rien à faire
+    if (actualZoneId == currentZoneId || actualZoneId < 0) {
+        return;
+    }
+
+    const CameraZone& currentZone = cameraZones[currentZoneId];
+    const CameraZone& newZone = cameraZones[actualZoneId];
+
+    // Déterminer si c'est horizontal ou vertical
+    if (currentZone.y == newZone.y) {
+        // Même hauteur Y = transition horizontale (instantané)
+        changeZoneHorizontal(actualZoneId);
+    } else {
+        // Hauteur différente = transition verticale (scroll automatique)
+        bool goingDown = newZone.y > currentZone.y;
+        startVerticalTransition(actualZoneId, goingDown);
+    }
+}
+
+/**
+ * Change instantanément de zone horizontalement
+ * Pas de scroll automatique, juste update de currentZoneId
+ * La caméra continuera de suivre le joueur normalement
+ */
+void GamePlayState::changeZoneHorizontal(int newZoneId)
+{
+    currentZoneId = newZoneId;
+}
+
+/**
+ * Démarre une transition verticale (scroll automatique)
+ * bool goingDown: true = vers le bas, false = vers le haut
+ * Définit la vitesse et direction du scroll
+ */
+void GamePlayState::startVerticalTransition(int newZoneId, bool goingDown)
+{
+    isTransitioning = true;
+    targetZoneId = newZoneId;
+    transitionDirection = TransitionDirection::VERTICAL;
+
+    #ifdef DEBUG
+    DEBUG_LOG("Vertical transition: Zone %d → Zone %d (%s)\n",
+              currentZoneId, targetZoneId, goingDown ? "DOWN" : "UP");
+    #endif
+}
+
+/**
+ * Scroll la caméra verticalement à 4px/frame
+ * Vérifie si on a atteint la zone cible
+ */
+void GamePlayState::updateVerticalTransition()
+{
+    if (!isTransitioning) return;
+
+    const CameraZone& targetZone = cameraZones[targetZoneId];
+    float targetCameraY = targetZone.y;
+    float currentCameraY = camera.getY();
+
+    // Déterminer la direction (haut ou bas)
+    if (currentCameraY < targetCameraY) {
+        // Scroll vers le bas
+        camera.setY(currentCameraY + VERTICAL_SCROLL_SPEED);
+        if (camera.getY() >= targetCameraY) {
+            camera.setY(targetCameraY);
+            finishTransition();
+        }
+    } else if (currentCameraY > targetCameraY) {
+        // Scroll vers le haut
+        camera.setY(currentCameraY - VERTICAL_SCROLL_SPEED);
+        if (camera.getY() <= targetCameraY) {
+            camera.setY(targetCameraY);
+            finishTransition();
+        }
+    } else {
+        // Déjà à la bonne position
+        finishTransition();
+    }
+}
+
+/**
+ * Termine proprement la transition verticale
+ * Reset les flags
+ */
+void GamePlayState::finishTransition()
+{
+    currentZoneId = targetZoneId;
+    isTransitioning = false;
+    targetZoneId = -1;
+
+    #ifdef DEBUG
+    DEBUG_LOG("Transition finished. Current zone: %d\n", currentZoneId);
+    #endif
+}
+
+/**
+ * Bloque le joueur aux bords de la zone
+ * Important: mort si chute sans next_zone_down
+ */
+void GamePlayState::applyZoneBoundaries()
+{
+    const CameraZone& zone = cameraZones[currentZoneId];
+
+    // Limites horizontales - bloquer seulement s'il n'y a pas de zone adjacente
+    float zoneLeft = zone.x;
+    float zoneRight = zone.x + zone.width;
+
+    // Bloquer à gauche seulement si pas de zone à gauche
+    if (player.getX() < zoneLeft && zone.next_zone_left < 0) {
+        player.setX(zoneLeft);
+    }
+
+    // Bloquer à droite seulement si pas de zone à droite
+    if (player.getX() + player.getWidth() > zoneRight && zone.next_zone_right < 0) {
+        player.setX(zoneRight - player.getWidth());
+    }
+
+    // Limites verticales
+    float zoneTop = zone.y;
+    float zoneBottom = zone.y + zone.height;
+
+    // Haut: bloquer seulement si pas de zone en haut
+    if (player.getY() < zoneTop && zone.next_zone_up < 0) {
+        player.setY(zoneTop);
+    }
+
+    // Bas: mort si pas de next_zone_down
+    if (player.getY() > zoneBottom) {
+        if (zone.next_zone_down < 0) {
+            // Pas de zone en dessous = mort (comme tomber dans le vide)
+            player.takeDamage(player.getHp());
+
+            #ifdef DEBUG
+            DEBUG_LOG("Player fell out of zone (no next_zone_down)\n");
+            #endif
+        }
+        // Sinon la transition se déclenchera au prochain frame
     }
 }
