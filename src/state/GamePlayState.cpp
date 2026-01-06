@@ -23,6 +23,29 @@ GamePlayState::~GamePlayState()
 
 void GamePlayState::update(const InputState &input)
 {
+    #ifdef DEBUG
+    // ===== MODE FRAME BY FRAME (DEBUG) =====
+    // Toggle du mode frame by frame avec la touche M
+    if (input.debugFrameByFrame && !mKeyPreviouslyPressed) {
+        frameByFrameMode = !frameByFrameMode;
+        DEBUG_LOG("Frame by frame mode: %s\n", frameByFrameMode ? "ON" : "OFF");
+    }
+    mKeyPreviouslyPressed = input.debugFrameByFrame;
+
+    // Si le mode frame by frame est activé
+    if (frameByFrameMode) {
+        // Avancer d'une frame seulement si RIGHT arrow est pressée
+        if (input.debugNextFrame && !nextFrameKeyPreviouslyPressed) {
+            nextFrameKeyPreviouslyPressed = input.debugNextFrame;
+            DEBUG_LOG("Advancing one frame\n");
+            // Continuer l'exécution normale pour cette frame
+        } else {
+            nextFrameKeyPreviouslyPressed = input.debugNextFrame;
+            return; // Pause: ne pas exécuter cette frame
+        }
+    }
+    #endif
+
     // 1. Update joueur (physique, input, collisions)
     player.update(input, level);
 
@@ -150,6 +173,13 @@ void GamePlayState::render()
         for (int y = startY; y <= endY; y++) {
             int screenY = y * TILE_SIZE - static_cast<int>(camera.getY());
             al_draw_line(0, screenY, 320, screenY, gridColor, 1.0f);
+        }
+
+        // Indicateur du mode frame by frame
+        if (frameByFrameMode && g_debugFont) {
+            ALLEGRO_COLOR textColor = al_map_rgb(255, 255, 0);  // Jaune
+            al_draw_text(g_debugFont, textColor, 5, 5, 0, "FRAME BY FRAME MODE");
+            al_draw_text(g_debugFont, textColor, 5, 15, 0, "Press RIGHT ARROW to advance");
         }
     #endif
 }
