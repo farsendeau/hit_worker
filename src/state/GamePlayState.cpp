@@ -47,14 +47,13 @@ void GamePlayState::update(const InputState &input)
     #endif
 
     // 1. Update joueur (physique, input, collisions)
-    if (isTransitioning) {
-        // Bloquer les inputs pendant la transition verticale
-        InputState emptyInput{};
-        player.update(emptyInput, level);
-    } else {
-        // Inputs normaux
+    if (!isTransitioning) {
+        // Mode normal: physique + inputs actifs
         player.update(input, level);
     }
+    // Pendant transition verticale: player.update() n'est PAS appelé!
+    // → Pas de gravité, pas d'inputs, joueur "gelé"
+    // → Son mouvement est contrôlé uniquement par updateVerticalTransition()
 
     // 2. Si en transition verticale
     if (isTransitioning) {
@@ -287,24 +286,22 @@ void GamePlayState::updateVerticalTransition()
 
     // Déterminer la direction (haut ou bas)
     if (currentCameraY < targetCameraY) {
-        // Scroll vers le bas
+        // Scroll vers le bas (caméra descend)
         camera.setY(currentCameraY + VERTICAL_SCROLL_SPEED);
 
-        // NE PAS bouger le joueur en absolu! Il reste fixe
-        // Résultat: position relative du joueur "remonte" sur l'écran
-        // (il part du bas de l'écran et arrive en haut)
+        // Le joueur NE BOUGE PAS en absolu (pas de player.update() appelé)
+        // Résultat visuel: le joueur "remonte" sur l'écran (du bas vers le haut)
 
         if (camera.getY() >= targetCameraY) {
             camera.setY(targetCameraY);
             finishTransition();
         }
     } else if (currentCameraY > targetCameraY) {
-        // Scroll vers le haut
+        // Scroll vers le haut (caméra monte)
         camera.setY(currentCameraY - VERTICAL_SCROLL_SPEED);
 
-        // NE PAS bouger le joueur en absolu! Il reste fixe
-        // Résultat: position relative du joueur "descend" sur l'écran
-        // (il part du haut de l'écran et arrive en bas)
+        // Le joueur NE BOUGE PAS en absolu (pas de player.update() appelé)
+        // Résultat visuel: le joueur "descend" sur l'écran (du haut vers le bas)
 
         if (camera.getY() <= targetCameraY) {
             camera.setY(targetCameraY);

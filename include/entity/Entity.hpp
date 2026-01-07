@@ -33,6 +33,7 @@ class Entity
         void setY(float value) { y = value; }
         float getVelocityX() const { return velocityX; }
         float getVelocityY() const { return velocityY; }
+        void setVelocityY(float value) { velocityY = value; }
         float getWidth() const { return width; }
         float getHeight() const { return height; }
         bool isOnGround() const { return onGround; }

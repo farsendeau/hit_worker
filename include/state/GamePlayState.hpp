@@ -36,9 +36,9 @@ class GamePlayState: public AbstractState
 
         // Mode frame by frame (debug)
         #ifdef DEBUG
-        bool frameByFrameMode{false};      // Mode frame par frame activé/désactivé
-        bool mKeyPreviouslyPressed{false}; // Pour détecter le toggle de M
-        bool nextFrameKeyPreviouslyPressed{false}; // Pour détecter le toggle de RIGHT arrow
+            bool frameByFrameMode{false};      // Mode frame par frame activé/désactivé
+            bool mKeyPreviouslyPressed{false}; // Pour détecter le toggle de M
+            bool nextFrameKeyPreviouslyPressed{false}; // Pour détecter le toggle de RIGHT arrow
         #endif
 
 
