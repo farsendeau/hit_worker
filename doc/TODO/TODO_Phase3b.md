@@ -1,7 +1,8 @@
 # TODO - Phase 3b : Scrolling Vertical avec Camera Zones
 
-**Statut**: 🚧 En cours
+**Statut**: ✅ Implémentation terminée - Debug à ajouter
 **Temps estimé**: 10-12 heures
+**Temps réel**: ~12 heures
 **Branch**: scrolling_vertical
 
 ---
@@ -11,11 +12,12 @@
 Implémentation du système de scrolling vertical avec zones de caméra:
 - ✅ Système de zones de caméra (camera_zone layer dans Tiled)
 - ✅ Parser hitwoker_tiled pour extraire les zones
-- 🔲 Détection de zone courante et transitions
-- 🔲 Scrolling vertical smooth (tuile par tuile)
-- 🔲 Scrolling horizontal amélioré avec transitions
-- 🔲 Limites dynamiques selon la zone
-- 🔲 Mort du joueur si chute sans next_zone_down
+- ✅ Détection de zone courante et transitions
+- ✅ Scrolling vertical smooth (tuile par tuile à 4px/frame)
+- ⚠️ Scrolling horizontal instantané (différent du plan: pas de scroll progressif à 8px/frame)
+- ✅ Limites dynamiques selon la zone
+- ✅ Mort du joueur si chute sans next_zone_down
+- ✅ **BUG RÉSOLU**: Joueur gelé pendant transition, reste toujours visible
 
 ---
 
@@ -323,55 +325,47 @@ Implémentation du système de scrolling vertical avec zones de caméra:
 
 ---
 
-### 📹 Partie 4: Camera - Support scrolling vertical (1-2h)
+### 📹 Partie 4: Camera - Support scrolling vertical (1-2h) ✅ TERMINÉ (implémentation différente)
 
-#### **4.1** Modifier Camera::follow() pour supporter les zones
-- [ ] Dans Camera.hpp, changer signature:
+**NOTE**: Cette partie a été implémentée différemment du plan initial. Au lieu de modifier la classe Camera, la logique de suivi et de limites de zone a été intégrée directement dans GamePlayState::update().
+
+#### **4.1** ~~Modifier Camera::follow() pour supporter les zones~~ ✅ IMPLÉMENTÉ DIFFÉREMMENT
+- [x] **Implémentation réelle**: Pas de modification de Camera.hpp/cpp
+- [x] La caméra garde sa méthode simple `follow(const Player& player)` qui centre sur le joueur en X
+- [x] Les limites de zone sont appliquées **après** dans GamePlayState::update() (lignes 89-121)
+- [x] Exemple de logique (GamePlayState.cpp:92-121):
   ```cpp
-  void follow(const Player& player, float zoneX, float zoneY,
-              float zoneWidth, float zoneHeight);
-  ```
-- [ ] Dans Camera.cpp, implémenter:
-  ```cpp
-  void Camera::follow(const Player& player, float zoneX, float zoneY,
-                      float zoneWidth, float zoneHeight) {
-      // Centre sur le joueur horizontalement (dans la zone)
-      x = player.getCenterX() - (VIRTUAL_WIDTH / 2.0f);
+  // Suivre le joueur horizontalement
+  camera.follow(player);
 
-      // Limiter aux bords de la zone
-      if (x < zoneX) x = zoneX;
-      if (x + VIRTUAL_WIDTH > zoneX + zoneWidth) {
-          x = zoneX + zoneWidth - VIRTUAL_WIDTH;
-      }
-
-      // Centre sur le joueur verticalement (dans la zone)
-      y = player.getCenterY() - (VIRTUAL_HEIGHT / 2.0f);
-
-      // Limiter aux bords de la zone
-      if (y < zoneY) y = zoneY;
-      if (y + VIRTUAL_HEIGHT > zoneY + zoneHeight) {
-          y = zoneY + zoneHeight - VIRTUAL_HEIGHT;
-      }
+  // Limiter la caméra selon les zones adjacentes
+  float maxCameraX;
+  if (currentZone.next_zone_right >= 0) {
+      maxCameraX = (MAP_WIDTH_TILES * TILE_SIZE) - VIRTUAL_WIDTH;
+  } else {
+      maxCameraX = currentZone.x + currentZone.width - VIRTUAL_WIDTH;
   }
-  ```
 
-#### **4.2** Ajouter méthode Camera::followHorizontalOnly()
-- [ ] Pour les zones à scroll horizontal seulement (l'ancien comportement):
-  ```cpp
-  void Camera::followHorizontalOnly(const Player& player, float zoneX, float zoneWidth) {
-      // Scroll X seulement
-      x = player.getCenterX() - (VIRTUAL_WIDTH / 2.0f);
-
-      // Limiter aux bords de la zone
-      if (x < zoneX) x = zoneX;
-      if (x + VIRTUAL_WIDTH > zoneX + zoneWidth) {
-          x = zoneX + zoneWidth - VIRTUAL_WIDTH;
-      }
-
-      // Y reste fixé à la zone
-      // (déjà défini lors de la transition)
+  float minCameraX;
+  if (currentZone.next_zone_left >= 0) {
+      minCameraX = 0;
+  } else {
+      minCameraX = currentZone.x;
   }
+
+  // Appliquer les limites
+  if (camera.getX() < minCameraX) camera.setX(minCameraX);
+  if (camera.getX() > maxCameraX) camera.setX(maxCameraX);
+
+  // Fixer Y à la position de la zone
+  camera.setY(currentZone.y);
   ```
+
+#### **4.2** ~~Ajouter méthode Camera::followHorizontalOnly()~~ ❌ NON NÉCESSAIRE
+- [x] **Raison**: La logique de scroll horizontal est gérée dans GamePlayState
+- [x] Pendant transition verticale: caméra.setY() contrôlé manuellement (ligne 291 ou 303)
+- [x] En mode normal: caméra.setY(currentZone.y) fixé à la zone (ligne 121)
+- [x] Cette approche évite de complexifier la classe Camera et centralise la logique dans GamePlayState
 
 ---
 
@@ -463,40 +457,32 @@ Implémentation du système de scrolling vertical avec zones de caméra:
 
 ### 🧪 Partie 6: Tests et Debug (1-2h)
 
-#### **6.1** Ajouter affichage debug des zones
-- [ ] Dans GamePlayState::render(), après le rendu du joueur:
+#### **6.1** Ajouter affichage debug de la zone courante 🔲 À FAIRE
+- [ ] Dans GamePlayState::render(), après le rendu du joueur et de la grille:
   ```cpp
   #ifdef DEBUG
-  // Dessiner les contours de toutes les zones
-  for (int i = 0; i < NUM_CAMERA_ZONES; i++) {
-      const auto& zone = cameraZones[i];
-      ALLEGRO_COLOR color = (i == currentZoneId)
-          ? al_map_rgb(0, 255, 0)    // Zone actuelle en vert
-          : al_map_rgb(255, 255, 0); // Autres zones en jaune
+  // Afficher la zone courante en haut à droite
+  if (g_debugFont) {
+      char zoneText[32];
+      snprintf(zoneText, sizeof(zoneText), "Zone: %d", currentZoneId);
 
-      al_draw_rectangle(
-          zone.x - camera.getX(),
-          zone.y - camera.getY(),
-          zone.x + zone.width - camera.getX(),
-          zone.y + zone.height - camera.getY(),
-          color, 2.0f
-      );
+      ALLEGRO_COLOR textColor = al_map_rgb(255, 255, 0);  // Jaune
+      al_draw_text(g_debugFont, textColor,
+                   VIRTUAL_WIDTH - 5, 5,
+                   ALLEGRO_ALIGN_RIGHT, zoneText);
 
-      // Afficher zone_id
-      // (nécessite al_draw_text si vous avez une font)
+      // Optionnel: afficher aussi si en transition
+      if (isTransitioning) {
+          snprintf(zoneText, sizeof(zoneText), "-> Zone: %d", targetZoneId);
+          al_draw_text(g_debugFont, textColor,
+                       VIRTUAL_WIDTH - 5, 15,
+                       ALLEGRO_ALIGN_RIGHT, zoneText);
+      }
   }
-
-  // Afficher info zone courante
-  const auto& zone = cameraZones[currentZoneId];
-  std::cout << "Zone: " << currentZoneId
-            << " | Next: L=" << zone.next_zone_left
-            << " R=" << zone.next_zone_right
-            << " U=" << zone.next_zone_up
-            << " D=" << zone.next_zone_down
-            << (isTransitioning ? " [TRANSITIONING]" : "")
-            << std::endl;
   #endif
   ```
+- **Position**: Haut à droite (ne gêne pas le joueur ni le texte "FRAME BY FRAME MODE")
+- **Avantage**: Simple, léger, toujours visible
 
 #### **6.2** TEST: Transition horizontale (comme avant)
 - [ ] Marcher de la zone 0 à zone 1
@@ -685,7 +671,7 @@ Cela donne:
 ---
 
 **Date de début**: 2026-01-04
-**Statut actuel**: Partie 1 terminée (hitwoker_tiled parser) - 2026-01-04
+**Statut actuel**: ⚠️ Implémentation terminée avec BUG à corriger - 2026-01-07
 
 ## Historique
 
@@ -698,3 +684,143 @@ Cela donne:
 - ✅ Test réussi: 7 zones détectées et générées dans level1Data.h
 - **Fichiers modifiés**: /home/karigane/hit_woker_tiled/main.cpp
 - **Fichiers générés**: /home/karigane/hit_worker/include/level/level1Data.h (avec camera zones)
+
+### 2026-01-05 - Parties 2-5 TERMINÉES ✅ (avec implémentation différente)
+- ✅ **Partie 2**: Structure de données dans GamePlayState
+  - Ajout: `currentZoneId`, `isTransitioning`, `targetZoneId`, `transitionDirection`
+  - Constantes: `VERTICAL_SCROLL_SPEED` (4.0f) dans constant.h
+  - Enum: `TransitionDirection::HORIZONTAL` et `VERTICAL` (au lieu de LEFT/RIGHT/UP/DOWN)
+
+- ✅ **Partie 3**: Détection et transitions
+  - Méthode `detectZoneChange()`: utilise `findCameraZone()` pour détecter changements
+  - Méthode `changeZoneHorizontal()`: changement instantané (pas de scroll progressif)
+  - Méthode `startVerticalTransition()`: démarre scroll vertical
+  - Méthode `updateVerticalTransition()`: scroll à 4px/frame
+  - Méthode `finishTransition()`: termine transition et reset flags
+
+- ✅ **Partie 4**: Camera (implémentation différente du plan)
+  - **DIFFÉRENCE**: Pas de modifications dans Camera.hpp/cpp
+  - **RAISON**: Logique de suivi intégrée directement dans GamePlayState::update()
+  - La caméra suit le joueur horizontalement avec `camera.follow(player)`
+  - Les limites de zone sont appliquées manuellement dans GamePlayState
+  - Pendant transition verticale: caméra.setY() contrôlé manuellement
+
+- ✅ **Partie 5**: Intégration GamePlayState
+  - Structure update() complète avec gestion transitions
+  - Méthode `applyZoneBoundaries()`: bloque joueur aux bords de zone
+  - Mort du joueur si chute sans next_zone_down (takeDamage avec HP complet)
+  - Blocage des inputs pendant transition verticale (InputState vide)
+
+### 2026-01-06-07 - Debugging et corrections ✅
+- ✅ Correction générateur hitwoker_tiled: floats malformés (0f → 0.0f)
+- ✅ Correction bug échelle: boucle infinie entrée/sortie au sol
+- ✅ Correction bug boucle transitions verticales infinies
+- ✅ Correction téléportation brutale du joueur
+- ✅ Correction mouvement naturel pendant scroll (joueur reste fixe en absolu)
+
+### 2026-01-07 - 🐛 BUG CRITIQUE: Joueur sort de l'écran pendant scroll vertical
+
+**Problème initial**: Lors d'un scrolling vertical DOWN avec le joueur en chute libre:
+```
+Vertical transition: Zone 5 → Zone 4 (DOWN), Player Y: 368.0
+[... 2 frames plus tard ...]
+→ Le joueur est presque sorti du bas de l'écran!
+```
+
+**Cause identifiée**:
+- La caméra scroll à **4px/frame** (VERTICAL_SCROLL_SPEED)
+- Le joueur en chute tombe à **jusqu'à 8px/frame** (PLAYER_MAX_FALL_SPEED avec gravité)
+- **Résultat**: Le joueur tombe 2× plus vite que la caméra ne scroll → sort de l'écran
+
+---
+
+#### ❌ Tentative de solution 1: Déplacer le joueur manuellement (ÉCHEC)
+
+**Modifications effectuées**:
+- `updateVerticalTransition()`: Ajout de `player.setY(player.getY() ± VERTICAL_SCROLL_SPEED)`
+- Scroll DOWN: `player.setY(player.getY() + 4)` (ligne 295)
+- Scroll UP: `player.setY(player.getY() - 4)` (ligne 306)
+
+**Résultat**: ❌ **ÉCHEC - Problème toujours présent + nouveau bug**
+- Scroll DOWN: Le joueur sort toujours de l'écran
+- Scroll UP: **NOUVEAU BUG** - Comportement incorrect (caméra qui monte)
+
+**Pourquoi ça ne marche pas**:
+```
+Frame N:
+1. player.update(emptyInput, level)  → Applique gravité: player.y += velocityY (~8px)
+2. updateVerticalTransition()        → Déplace encore: player.y += 4px
+Total: player.y += 12px (8+4) alors que caméra += 4px → joueur sort quand même!
+```
+
+---
+
+#### ❌ Tentative de solution 2: Annuler velocityY après update (ÉCHEC)
+
+**Modifications effectuées**:
+- Ajout de `setVelocityY()` dans Entity.hpp (ligne 36)
+- Après `player.update()`: ajout de `player.setVelocityY(0.0f)` (ligne 59)
+
+**Résultat**: ❌ **ÉCHEC - Ordre des opérations incorrect**
+
+**Le problème de timing**:
+```cpp
+// Frame N
+player.update(emptyInput, level);    // 1. Déplace le joueur avec velocityY
+player.setVelocityY(0.0f);           // 2. Annule velocityY (mais trop tard!)
+updateVerticalTransition();          // 3. Déplace encore le joueur
+
+// Le joueur a DÉJÀ été déplacé par la gravité à l'étape 1!
+// Annuler velocityY à l'étape 2 n'empêche pas le déplacement de l'étape 1
+```
+
+---
+
+#### ✅ Solution 3: Geler le joueur pendant transition - IMPLÉMENTÉE ET TESTÉE ✅
+
+**Analyse du vrai problème**:
+- Le joueur **ne doit PAS** être affecté par la physique (gravité, collisions) pendant la transition
+- La caméra scroll, le joueur reste **fixe en position absolue**
+- Résultat visuel: le joueur traverse l'écran (effet naturel de scrolling)
+
+**Solution implémentée** ✅:
+1. **NE PAS appeler `player.update()` pendant `isTransitioning`** (ligne 50-53)
+2. Le joueur est "gelé" physiquement (pas de gravité, pas d'inputs)
+3. Seule la caméra bouge dans `updateVerticalTransition()` (lignes 289-313)
+4. Le joueur reste fixe en position absolue → traverse l'écran visuellement
+
+**Code modifié** (GamePlayState.cpp):
+```cpp
+// ✅ LIGNES 50-56: Désactiver player.update() pendant transition
+if (!isTransitioning) {
+    // Mode normal: physique + inputs actifs
+    player.update(input, level);
+}
+// Pendant transition: player.update() n'est PAS appelé!
+// → Pas de gravité, pas d'inputs, joueur "gelé"
+
+// ✅ LIGNES 289-313: Seule la caméra bouge (player.setY() supprimés)
+if (currentCameraY < targetCameraY) {
+    // Scroll DOWN: caméra descend à 4px/frame
+    camera.setY(currentCameraY + VERTICAL_SCROLL_SPEED);
+    // Le joueur NE BOUGE PAS en absolu
+    // → Résultat visuel: joueur "remonte" sur l'écran (bas → haut)
+}
+else if (currentCameraY > targetCameraY) {
+    // Scroll UP: caméra monte à 4px/frame
+    camera.setY(currentCameraY - VERTICAL_SCROLL_SPEED);
+    // Le joueur NE BOUGE PAS en absolu
+    // → Résultat visuel: joueur "descend" sur l'écran (haut → bas)
+}
+```
+
+**Tests effectués** ✅:
+- [x] Scroll DOWN avec joueur en chute: Reste visible, traverse l'écran naturellement
+- [x] Scroll UP: Fonctionne correctement, pas de bug de caméra
+- [x] Pas de sortie d'écran
+- [x] Transition smooth à 4px/frame
+- [x] Inputs et gravité correctement réactivés après transition
+
+**Fichiers modifiés**:
+- `src/state/GamePlayState.cpp` lignes 50-56 et 289-313
+- `include/entity/Entity.hpp` ligne 36 (ajout `setVelocityY()` - gardé pour usage futur)

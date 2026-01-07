@@ -40,3 +40,8 @@ allegro_build/
 # Assets
 asset/
 font/
+
+# claude
+.claude/
+CLAUDE.md
+doc/TODO/
