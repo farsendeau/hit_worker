@@ -643,6 +643,39 @@ Cela donne:
 
 ---
 
+## 📋 Ce qu'il reste à faire (Phase 3b)
+
+### Partie 6: Tests et Debug ⚠️ PARTIELLEMENT TERMINÉ
+
+#### 🔲 À faire:
+1. **Affichage debug de la zone courante**
+   - Ajouter `al_draw_text()` en haut à droite: "Zone: X"
+   - Afficher "-> Zone: Y" pendant transition
+   - **Fichier**: `src/state/GamePlayState.cpp` dans `render()` après ligne 191
+   - **Temps estimé**: 15 minutes
+
+2. **Tests finaux avec vraie map**
+   - Tester tous les cas de transitions (LEFT, RIGHT, UP, DOWN)
+   - Vérifier les limites de zones
+   - Vérifier la mort si chute sans next_zone_down
+   - **Temps estimé**: 30 minutes
+
+#### ✅ Déjà testé:
+- Scroll vertical DOWN avec joueur en chute
+- Scroll vertical UP
+- Joueur reste visible pendant transitions
+- Inputs et gravité réactivés après transition
+
+### Partie 7: Documentation finale 🔲 À FAIRE
+- Mettre à jour `Hit_Woker_Plan_Developpement.md`
+- Marquer Phase 3b comme terminée
+- Commit final avec message récapitulatif
+- **Temps estimé**: 15 minutes
+
+### Total temps restant: ~1 heure
+
+---
+
 ## Dépendances
 
 ### hitwoker_tiled
@@ -671,7 +704,7 @@ Cela donne:
 ---
 
 **Date de début**: 2026-01-04
-**Statut actuel**: ⚠️ Implémentation terminée avec BUG à corriger - 2026-01-07
+**Statut actuel**: ✅ Implémentation terminée - Debug à ajouter - 2026-01-07
 
 ## Historique
 
