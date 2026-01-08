@@ -228,18 +228,19 @@ struct CameraZone {
     int zone_id;
     float x, y, width, height;
     int next_zone_left, next_zone_right, next_zone_up, next_zone_down;
+    bool zone_respawn;
 };
 
 constexpr int NUM_CAMERA_ZONES = 7;
 
 const CameraZone cameraZones[NUM_CAMERA_ZONES] = {
-    {0, 0.0f, 192.0f, 320.0f, 192.0f, -1, 1, -1, -1},  // Zone 0
-    {1, 320.0f, 192.0f, 320.0f, 192.0f, 0, 2, -1, -1},  // Zone 1
-    {2, 640.0f, 192.0f, 320.0f, 192.0f, 1, -1, -1, 4},  // Zone 2
-    {3, 640.0f, 384.0f, 320.0f, 192.0f, -1, 4, 2, -1},  // Zone 3
-    {4, 960.0f, 384.0f, 320.0f, 192.0f, 3, -1, 5, -1},  // Zone 4
-    {5, 960.0f, 192.0f, 320.0f, 192.0f, -1, -1, 6, 4},  // Zone 5
-    {6, 960.0f, 0.0f, 320.0f, 192.0f, -1, -1, -1, 5}  // Zone 6
+    {0, 0.0f, 192.0f, 320.0f, 192.0f, -1, 1, -1, -1, true},  // Zone 0 [RESPAWN]
+    {1, 320.0f, 192.0f, 320.0f, 192.0f, 1, 1, -1, -1, true},  // Zone 1 [RESPAWN]
+    {2, 640.0f, 192.0f, 320.0f, 192.0f, 1, -1, -1, 4, false},  // Zone 2
+    {3, 640.0f, 384.0f, 320.0f, 192.0f, -1, 4, 2, -1, false},  // Zone 3
+    {4, 960.0f, 384.0f, 320.0f, 192.0f, 3, -1, 5, -1, true},  // Zone 4 [RESPAWN]
+    {5, 960.0f, 192.0f, 320.0f, 192.0f, -1, -1, 6, 4, false},  // Zone 5
+    {6, 960.0f, 0.0f, 320.0f, 192.0f, -1, -1, -1, 5, false}  // Zone 6
 };
 
 // Helper pour trouver la zone du joueur

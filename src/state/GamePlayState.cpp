@@ -12,6 +12,15 @@ GamePlayState::GamePlayState()
     const CameraZone& startZone = cameraZones[currentZoneId];
     camera.setY(startZone.y);
 
+    // Initialiser le premier respawn point si la zone de départ est une zone de respawn
+    if (startZone.zone_respawn) {
+        float respawnX = startZone.x + startZone.width / 2.0f - player.getWidth() / 2.0f;
+        float respawnY = startZone.y + startZone.height / 2.0f - player.getHeight() / 2.0f;
+        player.setRespawnPoint(respawnX, respawnY);
+        lastRespawnZoneId = currentZoneId;
+        DEBUG_LOG("Initial respawn zone set: Zone %d\n", currentZoneId);
+    }
+
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
     DEBUG_LOG("Player starting in zone: %d (x=%.0f, y=%.0f)\n", currentZoneId, startZone.x, startZone.y);
@@ -230,6 +239,19 @@ void GamePlayState::detectZoneChange()
 
     const CameraZone& currentZone = cameraZones[currentZoneId];
     const CameraZone& newZone = cameraZones[actualZoneId];
+
+    // Vérifier si la nouvelle zone est une zone de respawn
+    // Ne l'activer que si son ID est supérieur à la dernière zone de respawn activée
+    // (évite de réactiver une zone précédente si le joueur revient en arrière)
+    if (newZone.zone_respawn && actualZoneId > lastRespawnZoneId) {
+        // Calculer le centre de la zone pour le respawn
+        float respawnX = newZone.x + newZone.width / 2.0f - player.getWidth() / 2.0f;
+        float respawnY = newZone.y + newZone.height / 2.0f - player.getHeight() / 2.0f;
+
+        player.setRespawnPoint(respawnX, respawnY);
+        lastRespawnZoneId = actualZoneId;
+        DEBUG_LOG("Zone de respawn activée: Zone %d (progression)\n", actualZoneId);
+    }
 
     // Déterminer si c'est horizontal ou vertical
     if (currentZone.y == newZone.y) {

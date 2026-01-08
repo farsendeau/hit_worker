@@ -28,6 +28,7 @@ class GamePlayState: public AbstractState
         bool isTransitioning{false};   // True pendant un scroll transition
         int targetZoneId{-1};          // Zone cible pendant transition
         TransitionDirection transitionDirection{}; // Direction de la transition en cours
+        int lastRespawnZoneId{0};      // ID de la dernière zone de respawn activée
 
         // Level et Player
         Level level;
