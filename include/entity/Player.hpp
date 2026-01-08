@@ -41,6 +41,10 @@ class Player: public Entity
         Weapon currentWeapon{Weapon::FIST};        // Arme équipée
         std::array<int, 3> ammo{999, 0, 0};     // Munition [FIST, PISTOL, GRENADE]
 
+        // ==== Respawn ====
+        float respawnX{32.0f};            // Position X de respawn
+        float respawnY{128.0f};           // Position Y de respawn
+
         // ==== Etat ====
         State currentState{State::IDLE}; // Etat actuel du joueur
 
@@ -60,6 +64,9 @@ class Player: public Entity
         void takeDamage(int damage);
         void respawn();
         void checkKillCollision(const Level &level);
+
+        // Méthodes de respawn
+        void setRespawnPoint(float x, float y);
 
         int getHp() const { return hp; }
 };

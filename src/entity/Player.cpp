@@ -371,9 +371,9 @@ void Player::takeDamage(int damage)
 
 void Player::respawn()
 {
-    // Reset position de départ
-    x = 32.0f;
-    y = 128.0f;
+    // Reset position au dernier point de respawn activé
+    x = respawnX;
+    y = respawnY;
 
     // Reset velocités
     velocityX = 0.0f;
@@ -386,6 +386,13 @@ void Player::respawn()
     invincibilityFrames = INVINCIBILITY_FRAMES;
 
     DEBUG_LOG("Player respawn à (%.0f, %.0f)\n", x, y);
+}
+
+void Player::setRespawnPoint(float newX, float newY)
+{
+    respawnX = newX;
+    respawnY = newY;
+    DEBUG_LOG("Respawn point défini: (%.1f, %.1f)\n", respawnX, respawnY);
 }
 
 void Player::checkKillCollision(const Level &level)
