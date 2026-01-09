@@ -5,13 +5,16 @@
 
 class GameOverState: public AbstractState
 {
-    private:
-    public:
-        GameOverState();
-        ~GameOverState();
-        virtual void update();
-        virtual void render();
-        virtual void handleInput();
+private:
+    int currentLevel{1};  // Niveau actuel pour retry
+    int fadeTimer{0};
+
+public:
+    GameOverState(int level);
+    ~GameOverState();
+    virtual void update(const InputState& input) override;
+    virtual void render() override;
+    virtual void handleInput() override;
 };
 
 #endif

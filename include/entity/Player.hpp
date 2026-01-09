@@ -18,7 +18,8 @@ class Player: public Entity
             JUMP, // Saute
             FALL, // Tombe
             CLIMB, // Sur une échelle
-            ATTACK // attaque
+            ATTACK, // attaque
+            DEAD // Mort (bloque tous les inputs)
         };
 
         enum class Weapon {
@@ -68,7 +69,20 @@ class Player: public Entity
         // Méthodes de respawn
         void setRespawnPoint(float x, float y);
 
+        // Getters
         int getHp() const { return hp; }
+        State getState() const { return currentState; }
+        int getLives() const { return lives; }
+        float getWidth() const { return width; }
+        float getHeight() const { return height; }
+
+        // Setters pour le reset
+        void setState(State newState) { currentState = newState; }
+        void setHp(int newHp) { hp = newHp; }
+        void setLives(int newLives) { lives = newLives; }
+        void setInvincibilityFrames(int frames) { invincibilityFrames = frames; }
+        void setVelocityX(float vx) { velocityX = vx; }
+        void setOnGround(bool ground) { onGround = ground; }
 };
 
 #endif // PLAYER_HPP
