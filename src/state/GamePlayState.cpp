@@ -242,15 +242,74 @@ void GamePlayState::setTileset(std::string &filename)
  */
 void GamePlayState::detectZoneChange()
 {
-    // Trouver la zone réelle du joueur basée sur sa position
-    int actualZoneId = findCameraZone(player.getCenterX(), player.getCenterY());
+    const CameraZone& currentZone = cameraZones[currentZoneId];
+    float playerX = player.getCenterX();
+    float playerY = player.getCenterY();
+
+    // === Vérifications des limites de la zone actuelle ===
+    float zoneBottom = currentZone.y + currentZone.height;
+    float zoneTop = currentZone.y;
+
+    // PRIORITÉ 1: Vérifier si le joueur est hors limites VERTICALEMENT
+    // Cas 1: Joueur tombé en dessous de la zone actuelle
+    if (playerY > zoneBottom) {
+        if (currentZone.next_zone_down == -1) {
+            // Pas de zone en dessous: mort instantanée
+            if (player.getState() != Player::State::DEAD) {
+                DEBUG_LOG("Player tombé hors limites bas (zone %d, next_zone_down=-1): MORT\n", currentZoneId);
+                player.takeDamage(player.getHp());
+            }
+            return;
+        }
+        // Sinon, il y a une zone en dessous, continuer avec la détection normale
+    }
+
+    // Cas 2: Joueur monté au-dessus de la zone actuelle
+    if (playerY < zoneTop) {
+        if (currentZone.next_zone_up == -1) {
+            // Pas de zone au-dessus: bloquer le joueur au bord haut
+            DEBUG_LOG("Player bloqué au bord haut (zone %d, next_zone_up=-1)\n", currentZoneId);
+            player.setY(zoneTop);
+            player.setVelocityY(0);
+            return;
+        }
+        // Sinon, il y a une zone au-dessus, continuer avec la détection normale
+    }
+
+    // PRIORITÉ 2: Trouver la nouvelle zone du joueur
+    int actualZoneId = findCameraZone(playerX, playerY);
+
+    #ifdef DEBUG
+    if (actualZoneId != currentZoneId && actualZoneId >= 0) {
+        DEBUG_LOG("[detectZoneChange] Player (%.1f, %.1f) zone %d -> actualZone %d\n",
+                  playerX, playerY, currentZoneId, actualZoneId);
+    }
+    #endif
 
     // Si pas de changement de zone, rien à faire
     if (actualZoneId == currentZoneId || actualZoneId < 0) {
         return;
     }
 
-    const CameraZone& currentZone = cameraZones[currentZoneId];
+    // PRIORITÉ 3: Vérifier si findCameraZone() a retourné la zone 0 par défaut
+    // Si oui, c'est que le joueur est hors de toutes les zones définies
+    const CameraZone& potentialNewZone = cameraZones[actualZoneId];
+    bool playerReallyInNewZone = (playerX >= potentialNewZone.x &&
+                                   playerX < potentialNewZone.x + potentialNewZone.width &&
+                                   playerY >= potentialNewZone.y &&
+                                   playerY < potentialNewZone.y + potentialNewZone.height);
+
+    if (!playerReallyInNewZone) {
+        // findCameraZone() a retourné une zone par défaut (zone 0)
+        // mais le joueur n'est PAS vraiment dans cette zone
+        // → Le joueur est tombé dans le vide
+        if (player.getState() != Player::State::DEAD) {
+            DEBUG_LOG("Player hors de toutes les zones (faux actualZoneId=%d): MORT\n", actualZoneId);
+            player.takeDamage(player.getHp());
+        }
+        return;
+    }
+
     const CameraZone& newZone = cameraZones[actualZoneId];
 
     // Vérifier si la nouvelle zone est une zone de respawn
