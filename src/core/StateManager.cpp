@@ -24,9 +24,14 @@ void StateManager::change(AbstractState *state)
 }
 
 void StateManager::update(const InputState &input)
-{  
+{
     if (!states.empty()) {
         states.back()->update(input); // Accède au dessus de la pile (dernier élément)
+
+        // Check si le state veut se pop
+        if (states.back()->shouldPop()) {
+            pop();
+        }
     }
 }
 

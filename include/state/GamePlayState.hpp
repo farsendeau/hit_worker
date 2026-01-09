@@ -8,6 +8,9 @@
 #include "../level/Level.hpp"
 #include "../entity/Player.hpp"
 
+// Forward declarations
+class StateManager;
+
 enum class TransitionDirection { // Direction d'une transition de zone
     HORIZONTAL,
     VERTICAL,
@@ -16,6 +19,7 @@ enum class TransitionDirection { // Direction d'une transition de zone
 class GamePlayState: public AbstractState
 {
     private:
+        StateManager* stateManager{nullptr};  // Référence au StateManager
         int currentLevel{1};
         ALLEGRO_BITMAP *tileset{nullptr};
         // Constantes de map
@@ -45,7 +49,7 @@ class GamePlayState: public AbstractState
 
     // ==== METHODE ====
     public:
-        GamePlayState();
+        GamePlayState(StateManager* sm);
         ~GamePlayState();
         virtual void update(const InputState &input);
         virtual void render();
@@ -53,14 +57,17 @@ class GamePlayState: public AbstractState
         int getCurrentLevel();
         void setCurrentLevel(int idLevel);
         void setTileset(std::string &filename);
+        void resetToRespawn(int respawnZoneId, int playerLives);  // Reset le niveau au dernier respawn
 
-    private:    
+    private:
         void detectZoneChange();          // Détecte si le joueur change de zone
         void changeZoneHorizontal(int newZoneId);  // Changement horizontal (instantané)
         void startVerticalTransition(int newZoneId, bool goingDown);  // Démarre scroll vertical
         void updateVerticalTransition();  // Update le scroll vertical
         void finishTransition();          // Termine une transition verticale
         void applyZoneBoundaries();       // Empêche le joueur de sortir de sa zone
+
+        bool isInDeathSequence{false};    // Flag pour éviter double-push de DeathState
 };
 
 #endif

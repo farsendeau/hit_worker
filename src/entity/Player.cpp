@@ -13,6 +13,11 @@ Player::~Player()
 
 void Player::update(const InputState &input, const Level &level)
 {
+    // Bloquer tout input et physique si mort
+    if (currentState == State::DEAD) {
+        return;
+    }
+
     // TODO à refacto pour être utiliser par Entity
 
     // 1. Réinitialiser velocityX chaque frame
@@ -360,12 +365,11 @@ void Player::takeDamage(int damage)
         --lives;
         DEBUG_LOG("Player mort! Lives restantes: %d\n", lives);
 
-        if (lives > 0) {
-            respawn();
-        } else {
-             DEBUG_LOG("GAME OVER!\n");
-            // TODO: Gérer game over plus tard
-        }
+        // Passer en état DEAD
+        currentState = State::DEAD;
+
+        // Le reste (fade, reset, game over) sera géré par DeathState
+        // Ne plus appeler respawn() directement ici
     }
 }
 

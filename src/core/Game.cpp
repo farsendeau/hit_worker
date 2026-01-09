@@ -105,7 +105,7 @@ bool Game::init()
     // Démarre avec le menu
     // TODO remettre MenuState après les tests
     //stateManager.change(new MenuState());
-    stateManager.change(new GamePlayState);
+    stateManager.change(new GamePlayState(&stateManager));
 
 #ifdef DEBUG
     // Ouvrir la fenêtre de log debug
