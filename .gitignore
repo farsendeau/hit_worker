@@ -45,3 +45,6 @@ font/
 .claude/
 CLAUDE.md
 doc/TODO/
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.github/instructions/snyk_rules.instructions.md

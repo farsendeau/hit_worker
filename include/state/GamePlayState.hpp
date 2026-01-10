@@ -85,12 +85,13 @@ class GamePlayState: public AbstractState
         // Projectile management
         Projectile* getInactiveProjectile();
         void spawnProjectile(ProjectileType type, float x, float y,
-                           float velX, float velY, int damage);
+                           float velX, float velY, int damage, bool playerOwned = true);
         void updateProjectiles(const InputState& input);
         void renderProjectiles(float cameraX, float cameraY) const;
 
         // Enemy management
         void checkProjectileEnemyCollisions();  // Collision projectiles vs enemies
+        void checkEnemyProjectilePlayerCollisions();  // Collision projectiles enemies vs player
         void checkPlayerEnemyCollisions();      // Collision player vs enemies (contact damage)
         void checkMeleeEnemyCollisions();       // Collision melee weapon vs enemies
         void updateEnemies(const InputState& input);

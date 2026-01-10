@@ -109,11 +109,20 @@ void Projectile::render(float cameraX, float cameraY) const
         );
     } else {
         // Render projectile as rectangle
+        // Différenciation visuelle: Player (jaune/orange) vs Enemy (rouge/violet)
         ALLEGRO_COLOR color;
         if (type == ProjectileType::BULLET) {
-            color = al_map_rgb(255, 100, 100);  // Reddish for bullets
-        } else {
-            color = al_map_rgb(50, 50, 50);     // Dark for grenades
+            if (playerOwned) {
+                color = al_map_rgb(255, 200, 0);   // Jaune/Orange pour player
+            } else {
+                color = al_map_rgb(255, 0, 100);   // Rouge/Violet pour enemies
+            }
+        } else {  // GRENADE
+            if (playerOwned) {
+                color = al_map_rgb(50, 50, 50);    // Gris foncé pour player grenades
+            } else {
+                color = al_map_rgb(150, 0, 150);   // Violet pour enemy grenades (futur)
+            }
         }
 
         al_draw_filled_rectangle(

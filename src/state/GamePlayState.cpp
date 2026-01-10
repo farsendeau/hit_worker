@@ -3,6 +3,7 @@
 #include "core/StateManager.hpp"
 #include "entity/DummyEnemy.hpp"
 #include "entity/Fioneur.hpp"
+#include "entity/TurretGode.hpp"
 #include "combat/Weapon.hpp"
 #include "combat/Hitbox.hpp"
 
@@ -56,6 +57,10 @@ GamePlayState::GamePlayState(StateManager* sm)
     // Spawner 1 Fioneur pour test (Itération 2)
     // Position: Zone 1 (x=[320, 640], y=[192, 384])
     enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);
+
+    // Spawner 1 TurretGode pour test (Itération 4)
+    // Position: Zone 3 (x=[960, 1280], y=[192, 384])
+    enemies[2] = std::make_unique<TurretGode>(1100.0f, 270.0f, this);
 
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
@@ -183,6 +188,9 @@ void GamePlayState::update(const InputState &input)
 
     // 6.6. Collision projectiles vs enemies
     checkProjectileEnemyCollisions();
+
+    // 6.6b. Collision projectiles enemies vs player (Itération 4)
+    checkEnemyProjectilePlayerCollisions();
 
     // 6.7. Collision melee weapon vs enemies (Itération 3)
     checkMeleeEnemyCollisions();
@@ -598,14 +606,16 @@ Projectile* GamePlayState::getInactiveProjectile()
 
 /**
  * Spawn a new projectile (from pool)
+ * @param playerOwned True si le projectile appartient au joueur, False si enemy
  */
 void GamePlayState::spawnProjectile(ProjectileType type, float x, float y,
-                                   float velX, float velY, int damage)
+                                   float velX, float velY, int damage, bool playerOwned)
 {
     Projectile* proj = getInactiveProjectile();
     if (proj) {
-        proj->spawn(type, x, y, velX, velY, damage, true);
-        DEBUG_LOG("Spawned projectile at (%.1f, %.1f) with velocity (%.1f, %.1f)\n", x, y, velX, velY);
+        proj->spawn(type, x, y, velX, velY, damage, playerOwned);
+        DEBUG_LOG("Spawned %s projectile at (%.1f, %.1f) with velocity (%.1f, %.1f)\n",
+                 playerOwned ? "player" : "enemy", x, y, velX, velY);
     }
 }
 
@@ -826,6 +836,7 @@ void GamePlayState::resetEnemies()
     // TODO Itération 6: Parser depuis Tiled au lieu de hardcode
     enemies[0] = std::make_unique<DummyEnemy>(750.0f, 250.0f);  // Zone 2
     enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);     // Zone 1
+    enemies[2] = std::make_unique<TurretGode>(1100.0f, 270.0f, this);  // Zone 3
 
     DEBUG_LOG("Enemies reset to initial positions\n");
 }
@@ -842,4 +853,56 @@ void GamePlayState::resetProjectiles()
     }
 
     DEBUG_LOG("All projectiles deactivated\n");
+}
+
+/**
+ * Vérifie les collisions entre les projectiles enemies et le joueur
+ * Itération 4, tâche 4.4
+ */
+void GamePlayState::checkEnemyProjectilePlayerCollisions()
+{
+    // Hitbox du joueur
+    float playerLeft = player.getX();
+    float playerRight = playerLeft + player.getWidth();
+    float playerTop = player.getY();
+    float playerBottom = playerTop + player.getHeight();
+
+    // Tester chaque projectile actif
+    for (auto& projectile : projectilePool) {
+        if (!projectile.isActive()) {
+            continue;
+        }
+
+        // Ignorer les projectiles du joueur
+        if (projectile.isPlayerOwned()) {
+            continue;
+        }
+
+        // Ignorer les explosions (gérées séparément si nécessaire)
+        if (projectile.isExploding()) {
+            continue;
+        }
+
+        // Hitbox du projectile
+        float projLeft = projectile.getX();
+        float projRight = projLeft + projectile.getWidth();
+        float projTop = projectile.getY();
+        float projBottom = projTop + projectile.getHeight();
+
+        // AABB collision test
+        bool collision = (projRight > playerLeft &&
+                         projLeft < playerRight &&
+                         projBottom > playerTop &&
+                         projTop < playerBottom);
+
+        if (collision) {
+            // Infliger dégâts au joueur (takeDamage gère l'invincibilité)
+            player.takeDamage(projectile.getDamage());
+
+            // Désactiver le projectile
+            projectile.deactivate();
+
+            DEBUG_LOG("Enemy projectile hit player! Damage: %d\n", projectile.getDamage());
+        }
+    }
 }
