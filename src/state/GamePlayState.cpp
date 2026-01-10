@@ -59,8 +59,8 @@ GamePlayState::GamePlayState(StateManager* sm)
     enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);
 
     // Spawner 1 TurretGode pour test (Itération 4)
-    // Position: Zone 3 (x=[960, 1280], y=[192, 384])
-    enemies[2] = std::make_unique<TurretGode>(1100.0f, 270.0f, this);
+    // Position: Zone 3 (x=[640, 960], y=[384, 576]) - EN DESSOUS de Zone 2
+    enemies[2] = std::make_unique<TurretGode>(176.0f, 304.0f, this);
 
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
@@ -686,9 +686,8 @@ void GamePlayState::checkProjectileEnemyCollisions()
             continue;
         }
 
-        // Ignorer les projectiles d'enemies (pour l'instant)
-        // TODO Itération 4: Gérer collision projectiles enemies vs player
-        if (!projectile.isActive()) {
+        // Ignorer les projectiles enemies - seuls les projectiles player touchent les enemies
+        if (!projectile.isPlayerOwned()) {
             continue;
         }
 
@@ -836,7 +835,7 @@ void GamePlayState::resetEnemies()
     // TODO Itération 6: Parser depuis Tiled au lieu de hardcode
     enemies[0] = std::make_unique<DummyEnemy>(750.0f, 250.0f);  // Zone 2
     enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);     // Zone 1
-    enemies[2] = std::make_unique<TurretGode>(1100.0f, 270.0f, this);  // Zone 3
+    enemies[2] = std::make_unique<TurretGode>(750.0f, 450.0f, this);  // Zone 3 (en dessous de Zone 2)
 
     DEBUG_LOG("Enemies reset to initial positions\n");
 }

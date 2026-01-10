@@ -111,24 +111,26 @@ void TurretGode::shootCross()
     float centerX = x + width / 2.0f;
     float centerY = y + height / 2.0f;
 
-    // Tirer 4 projectiles en croix (nord, sud, est, ouest)
-    // Projectile type: BULLET, damage: 15, playerOwned: FALSE
+    // Tirer 4 projectiles en arc de cercle (trajectoires paraboliques)
+    // Projectile type: GRENADE (pour avoir gravité et créer des arcs)
+    // Pattern: 2 à gauche, 2 à droite avec des arcs différents
+    // Comme sur le dessin: arcs de cercle avec gravité
 
-    // Est (droite)
-    gameState->spawnProjectile(ProjectileType::BULLET, centerX, centerY,
-                              PROJECTILE_SPEED, 0.0f, TURRET_PROJECTILE_DAMAGE, false);
+    // GAUCHE - Arc élevé (monte haut puis retombe)
+    gameState->spawnProjectile(ProjectileType::GRENADE, centerX, centerY,
+                              -3.0f, -4.0f, TURRET_PROJECTILE_DAMAGE, false);
 
-    // Ouest (gauche)
-    gameState->spawnProjectile(ProjectileType::BULLET, centerX, centerY,
-                              -PROJECTILE_SPEED, 0.0f, TURRET_PROJECTILE_DAMAGE, false);
+    // GAUCHE - Arc bas (monte moins puis retombe)
+    gameState->spawnProjectile(ProjectileType::GRENADE, centerX, centerY,
+                              -3.5f, -2.5f, TURRET_PROJECTILE_DAMAGE, false);
 
-    // Nord (haut)
-    gameState->spawnProjectile(ProjectileType::BULLET, centerX, centerY,
-                              0.0f, -PROJECTILE_SPEED, TURRET_PROJECTILE_DAMAGE, false);
+    // DROITE - Arc élevé (monte haut puis retombe)
+    gameState->spawnProjectile(ProjectileType::GRENADE, centerX, centerY,
+                              3.0f, -4.0f, TURRET_PROJECTILE_DAMAGE, false);
 
-    // Sud (bas)
-    gameState->spawnProjectile(ProjectileType::BULLET, centerX, centerY,
-                              0.0f, PROJECTILE_SPEED, TURRET_PROJECTILE_DAMAGE, false);
+    // DROITE - Arc bas (monte moins puis retombe)
+    gameState->spawnProjectile(ProjectileType::GRENADE, centerX, centerY,
+                              3.5f, -2.5f, TURRET_PROJECTILE_DAMAGE, false);
 
-    DEBUG_LOG("TurretGode fired cross pattern at (%.1f, %.1f)\n", centerX, centerY);
+    DEBUG_LOG("TurretGode fired arc pattern at (%.1f, %.1f)\n", centerX, centerY);
 }
