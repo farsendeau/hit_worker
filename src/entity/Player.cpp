@@ -1,10 +1,19 @@
 #include "entity/Player.hpp"
 #include "level/Level.hpp"
+#include "combat/MeleeWeapon.hpp"
+#include "combat/ProjectileWeapon.hpp"
+#include "combat/GrenadeWeapon.hpp"
+#include "state/GamePlayState.hpp"
 #include <cstdio>
 
-Player::Player(float startX, float startY)
-: Entity(startX, startY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WALK_SPEED)
+Player::Player(float startX, float startY, GamePlayState* gps)
+: Entity(startX, startY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WALK_SPEED),
+  gameState(gps)
 {
+    // Initialize weapons
+    weapons[0] = std::make_unique<MeleeWeapon>();
+    weapons[1] = std::make_unique<ProjectileWeapon>();
+    weapons[2] = std::make_unique<GrenadeWeapon>();
 }
 
 Player::~Player()
@@ -16,6 +25,32 @@ void Player::update(const InputState &input, const Level &level)
     // Bloquer tout input et physique si mort
     if (currentState == State::DEAD) {
         return;
+    }
+
+    // ==== WEAPON SYSTEM ====
+    // Weapon switch (avant l'attaque)
+    if (input.weaponSwitch && currentState != State::ATTACK) {
+        switchWeapon();
+    }
+
+    // Attack cooldown
+    if (attackCooldown > 0) {
+        attackCooldown--;
+    }
+
+    // Handle attack input
+    handleAttackInput(input);
+
+    // Update weapon animation
+    if (currentState == State::ATTACK) {
+        updateWeapons();
+
+        // Check if attack is finished
+        if (!getCurrentWeapon()->isAttacking()) {
+            currentState = State::IDLE;
+            attackCooldown = 5;  // 5 frames cooldown
+        }
+        // NE PAS bloquer le mouvement - continuer le traitement normal
     }
 
     // TODO à refacto pour être utiliser par Entity
@@ -219,6 +254,19 @@ void Player::render(float cameraX, float cameraY) const
             screenX + width, screenY + height,
             color
         );
+
+        // Render attack animation
+        if (currentState == State::ATTACK && getCurrentWeapon()) {
+            ALLEGRO_COLOR attackColor = getCurrentWeapon()->getAnimController().getDebugColor();
+            float offsetX = facingRight ? width : -24.0f;
+
+            // Visual attack indicator
+            al_draw_filled_rectangle(
+                screenX + offsetX, screenY + 4,
+                screenX + offsetX + 24, screenY + 20,
+                attackColor
+            );
+        }
     }
 
     #ifdef DEBUG
@@ -411,4 +459,63 @@ void Player::checkKillCollision(const Level &level)
         // Mort instantanée (inflige tous les HP)
         takeDamage(hp);
     }
+}
+
+void Player::handleAttackInput(const InputState& input)
+{
+    // Can't attack if already attacking or in cooldown
+    if (!input.attack || currentState == State::ATTACK || attackCooldown > 0) {
+        return;
+    }
+
+    ::Weapon* weapon = getCurrentWeapon();
+    if (!weapon) {
+        return;
+    }
+
+    int weaponIndex = static_cast<int>(currentWeapon);
+
+    // Try to attack
+    if (weapon->tryAttack(facingRight, x, y, ammo[weaponIndex], gameState)) {
+        currentState = State::ATTACK;
+        DEBUG_LOG("Attack started with weapon %d\n", weaponIndex);
+    } else {
+        DEBUG_LOG("Attack failed (no ammo?)\n");
+    }
+}
+
+void Player::updateWeapons()
+{
+    ::Weapon* weapon = getCurrentWeapon();
+    if (weapon) {
+        weapon->update(x, y, facingRight);
+    }
+}
+
+::Weapon* Player::getCurrentWeapon()
+{
+    int index = static_cast<int>(currentWeapon);
+    if (index >= 0 && index < static_cast<int>(weapons.size())) {
+        return weapons[index].get();
+    }
+    return nullptr;
+}
+
+const ::Weapon* Player::getCurrentWeapon() const
+{
+    int index = static_cast<int>(currentWeapon);
+    if (index >= 0 && index < static_cast<int>(weapons.size())) {
+        return weapons[index].get();
+    }
+    return nullptr;
+}
+
+void Player::switchWeapon()
+{
+    // Cycle through weapons: FIST -> PISTOL -> GRENADE -> FIST
+    int current = static_cast<int>(currentWeapon);
+    current = (current + 1) % 3;
+    currentWeapon = static_cast<Weapon>(current);
+
+    DEBUG_LOG("Switched to weapon %d\n", current);
 }

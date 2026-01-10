@@ -7,6 +7,8 @@
 #include "../level/Camera.hpp"
 #include "../level/Level.hpp"
 #include "../entity/Player.hpp"
+#include "../entity/Projectile.hpp"
+#include <array>
 
 // Forward declarations
 class StateManager;
@@ -39,6 +41,10 @@ class GamePlayState: public AbstractState
         //Player player{32.0f, 128.0f};  // Position de départ (2 tiles à droite, 8 tiles en bas)
         Player player{70.0f, 70.0f};
 
+        // Projectile pool
+        static constexpr int MAX_PROJECTILES{20};
+        std::array<Projectile, MAX_PROJECTILES> projectilePool;
+
         // Mode frame by frame (debug)
         #ifdef DEBUG
             bool frameByFrameMode{false};      // Mode frame par frame activé/désactivé
@@ -68,6 +74,14 @@ class GamePlayState: public AbstractState
         void applyZoneBoundaries();       // Empêche le joueur de sortir de sa zone
 
         bool isInDeathSequence{false};    // Flag pour éviter double-push de DeathState
+
+    public:
+        // Projectile management
+        Projectile* getInactiveProjectile();
+        void spawnProjectile(ProjectileType type, float x, float y,
+                           float velX, float velY, int damage);
+        void updateProjectiles(const InputState& input);
+        void renderProjectiles(float cameraX, float cameraY) const;
 };
 
 #endif

@@ -2,12 +2,15 @@
 #define PLAYER_HPP
 
 #include <array>
+#include <memory>
 #include "entity/Entity.hpp"
 #include "utils/constant.h"
 #include "utils/InputState.hpp"
 
-// Forward declarations 
+// Forward declarations
 class Level;
+class Weapon;
+class GamePlayState;
 
 class Player: public Entity
 {
@@ -40,7 +43,12 @@ class Player: public Entity
         int lives{PLAYER_START_LIVES};    // Vies restantes
         int invincibilityFrames{};        // Frames d'invicibilité restantes
         Weapon currentWeapon{Weapon::FIST};        // Arme équipée
-        std::array<int, 3> ammo{999, 0, 0};     // Munition [FIST, PISTOL, GRENADE]
+        std::array<int, 3> ammo{999, 10, 5};     // Munition [FIST, PISTOL, GRENADE]
+
+        // ==== Weapon System ====
+        std::array<std::unique_ptr<::Weapon>, 3> weapons;  // Les 3 armes (FIST, PISTOL, GRENADE)
+        int attackCooldown{};             // Frames de cooldown après attaque
+        GamePlayState* gameState{nullptr}; // Pointer to game state (for spawning projectiles)
 
         // ==== Respawn ====
         float respawnX{32.0f};            // Position X de respawn
@@ -50,7 +58,7 @@ class Player: public Entity
         State currentState{State::IDLE}; // Etat actuel du joueur
 
     public:
-        Player(float startX, float startY);
+        Player(float startX, float startY, GamePlayState* gps = nullptr);
         ~Player();
 
         // override des méthodes de virtuelles de Entity
@@ -68,6 +76,14 @@ class Player: public Entity
 
         // Méthodes de respawn
         void setRespawnPoint(float x, float y);
+
+        // Méthodes de weapon system
+        void handleAttackInput(const InputState& input);
+        void updateWeapons();
+        ::Weapon* getCurrentWeapon();
+        const ::Weapon* getCurrentWeapon() const;  // Const version for render()
+        void switchWeapon();
+        void setGameState(GamePlayState* gps) { gameState = gps; }
 
         // Getters
         int getHp() const { return hp; }

@@ -5,6 +5,9 @@
 GamePlayState::GamePlayState(StateManager* sm)
     : stateManager(sm)
 {
+    // Link player to this game state (for weapon system)
+    player.setGameState(this);
+
     std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
     setTileset(filename);
 
@@ -141,7 +144,10 @@ void GamePlayState::update(const InputState &input)
     // Fixer Y à la position de la zone
     camera.setY(currentZone.y);
 
-    // 6. Limiter le joueur aux bords de la zone
+    // 6. Update projectiles
+    updateProjectiles(input);
+
+    // 7. Limiter le joueur aux bords de la zone
     applyZoneBoundaries();
 }
 
@@ -186,6 +192,9 @@ void GamePlayState::render()
 
     // Dessiner le joueur
     player.render(camera.getX(), camera.getY());
+
+    // Dessiner les projectiles
+    renderProjectiles(camera.getX(), camera.getY());
 
     // Dessiner la grille de débogage
     #ifdef DEBUG
@@ -520,4 +529,56 @@ void GamePlayState::resetToRespawn(int zoneId, int lives)
     targetZoneId = -1;
 
     DEBUG_LOG("Reset complete - Player at (%.1f, %.1f)\n", respawnX, respawnY);
+}
+
+/**
+ * Get first inactive projectile from pool
+ */
+Projectile* GamePlayState::getInactiveProjectile()
+{
+    for (auto& projectile : projectilePool) {
+        if (!projectile.isActive()) {
+            return &projectile;
+        }
+    }
+
+    DEBUG_LOG("WARNING: Projectile pool exhausted!\n");
+    return nullptr;  // Pool is full
+}
+
+/**
+ * Spawn a new projectile (from pool)
+ */
+void GamePlayState::spawnProjectile(ProjectileType type, float x, float y,
+                                   float velX, float velY, int damage)
+{
+    Projectile* proj = getInactiveProjectile();
+    if (proj) {
+        proj->spawn(type, x, y, velX, velY, damage, true);
+        DEBUG_LOG("Spawned projectile at (%.1f, %.1f) with velocity (%.1f, %.1f)\n", x, y, velX, velY);
+    }
+}
+
+/**
+ * Update all active projectiles
+ */
+void GamePlayState::updateProjectiles(const InputState& input)
+{
+    for (auto& projectile : projectilePool) {
+        if (projectile.isActive()) {
+            projectile.update(input, level);
+        }
+    }
+}
+
+/**
+ * Render all active projectiles
+ */
+void GamePlayState::renderProjectiles(float cameraX, float cameraY) const
+{
+    for (const auto& projectile : projectilePool) {
+        if (projectile.isActive()) {
+            projectile.render(cameraX, cameraY);
+        }
+    }
 }
