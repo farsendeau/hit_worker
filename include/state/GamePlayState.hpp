@@ -8,7 +8,9 @@
 #include "../level/Level.hpp"
 #include "../entity/Player.hpp"
 #include "../entity/Projectile.hpp"
+#include "../entity/Enemy.hpp"
 #include <array>
+#include <memory>
 
 // Forward declarations
 class StateManager;
@@ -44,6 +46,10 @@ class GamePlayState: public AbstractState
         // Projectile pool
         static constexpr int MAX_PROJECTILES{20};
         std::array<Projectile, MAX_PROJECTILES> projectilePool;
+
+        // Enemy pool
+        static constexpr int MAX_ENEMIES{10};  // Maximum 10 enemies sur la même caméra
+        std::array<std::unique_ptr<Enemy>, MAX_ENEMIES> enemies;
 
         // Mode frame by frame (debug)
         #ifdef DEBUG
@@ -82,6 +88,11 @@ class GamePlayState: public AbstractState
                            float velX, float velY, int damage);
         void updateProjectiles(const InputState& input);
         void renderProjectiles(float cameraX, float cameraY) const;
+
+        // Enemy management
+        void checkProjectileEnemyCollisions();  // Collision projectiles vs enemies
+        void updateEnemies(const InputState& input);
+        void renderEnemies(float cameraX, float cameraY) const;
 };
 
 #endif

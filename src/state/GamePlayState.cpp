@@ -1,6 +1,7 @@
 #include "state/GamePlayState.hpp"
 #include "state/DeathState.hpp"
 #include "core/StateManager.hpp"
+#include "entity/DummyEnemy.hpp"
 
 GamePlayState::GamePlayState(StateManager* sm)
     : stateManager(sm)
@@ -27,9 +28,31 @@ GamePlayState::GamePlayState(StateManager* sm)
         DEBUG_LOG("Initial respawn zone set: Zone %d\n", currentZoneId);
     }
 
+    // ========================================
+    // ⚠️⚠️⚠️ TODO CRITIQUE - ABSOLUMENT À FAIRE ⚠️⚠️⚠️
+    // ========================================
+    // HARDCODE TEMPORAIRE: Les positions d'enemies sont hardcodées ci-dessous.
+    //
+    // OBJECTIF FINAL: Parser le layer object "enemy" depuis Tiled (.tmx)
+    // - Modifier hitwoker_tiled/main.cpp pour parser les objets du layer "enemy"
+    // - Générer une structure C++ avec les spawn points (id_type, x, y)
+    // - Charger ces données dans GamePlayState
+    //
+    // RÉFÉRENCES:
+    // - doc/guide/hitwoker_tiled.md : Documentation de l'outil Tiled
+    // - TODO Phase 4-5, Itération 6 : Enemy Spawning System
+    // - Layer Tiled: "enemy" avec propriété "id_type" (int ou string)
+    //
+    // IMPORTANT: Ce hardcode doit être supprimé à l'Itération 6!
+    // ========================================
+
+    // Spawner 1 DummyEnemy pour test (Itération 1)
+    enemies[0] = std::make_unique<DummyEnemy>(200.0f, 100.0f);
+
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
     DEBUG_LOG("Player starting in zone: %d (x=%.0f, y=%.0f)\n", currentZoneId, startZone.x, startZone.y);
+    DEBUG_LOG("⚠️ ENEMY POSITIONS HARDCODED - TODO: Parser depuis Tiled!\n");
 }
 
 GamePlayState::~GamePlayState()
@@ -147,6 +170,12 @@ void GamePlayState::update(const InputState &input)
     // 6. Update projectiles
     updateProjectiles(input);
 
+    // 6.5. Update enemies
+    updateEnemies(input);
+
+    // 6.6. Collision projectiles vs enemies
+    checkProjectileEnemyCollisions();
+
     // 7. Limiter le joueur aux bords de la zone
     applyZoneBoundaries();
 }
@@ -189,6 +218,9 @@ void GamePlayState::render()
             );
         }
     }
+
+    // Dessiner les enemies (avant le joueur pour layering)
+    renderEnemies(camera.getX(), camera.getY());
 
     // Dessiner le joueur
     player.render(camera.getX(), camera.getY());
@@ -579,6 +611,85 @@ void GamePlayState::renderProjectiles(float cameraX, float cameraY) const
     for (const auto& projectile : projectilePool) {
         if (projectile.isActive()) {
             projectile.render(cameraX, cameraY);
+        }
+    }
+}
+/**
+ * Update tous les ennemis actifs
+ */
+void GamePlayState::updateEnemies(const InputState& input)
+{
+    for (auto& enemy : enemies) {
+        if (enemy && enemy->isAlive()) {
+            enemy->update(input, level);
+        }
+    }
+}
+
+/**
+ * Render tous les ennemis vivants
+ */
+void GamePlayState::renderEnemies(float cameraX, float cameraY) const
+{
+    for (const auto& enemy : enemies) {
+        if (enemy && enemy->isAlive()) {
+            enemy->render(cameraX, cameraY);
+        }
+    }
+}
+
+/**
+ * Collision projectiles vs enemies
+ * Teste tous les projectiles actifs contre tous les enemies vivants
+ * AABB (Axis-Aligned Bounding Box) collision
+ */
+void GamePlayState::checkProjectileEnemyCollisions()
+{
+    for (auto& projectile : projectilePool) {
+        if (!projectile.isActive()) {
+            continue;
+        }
+
+        // Ignorer les projectiles d'enemies (pour l'instant)
+        // TODO Itération 4: Gérer collision projectiles enemies vs player
+        if (!projectile.isActive()) {
+            continue;
+        }
+
+        // Hitbox du projectile
+        float projLeft = projectile.getX();
+        float projRight = projLeft + projectile.getWidth();
+        float projTop = projectile.getY();
+        float projBottom = projTop + projectile.getHeight();
+
+        // Tester contre chaque enemy vivant
+        for (auto& enemy : enemies) {
+            if (!enemy || !enemy->isAlive() || enemy->isInvincible()) {
+                continue;
+            }
+
+            // Hitbox de l'enemy
+            float enemyLeft = enemy->getX();
+            float enemyRight = enemyLeft + enemy->getWidth();
+            float enemyTop = enemy->getY();
+            float enemyBottom = enemyTop + enemy->getHeight();
+
+            // AABB collision test
+            bool collision = (projRight > enemyLeft &&
+                            projLeft < enemyRight &&
+                            projBottom > enemyTop &&
+                            projTop < enemyBottom);
+
+            if (collision) {
+                // Infliger dégâts à l'enemy
+                enemy->takeDamage(projectile.getDamage());
+
+                // Désactiver le projectile
+                projectile.deactivate();
+
+                DEBUG_LOG("Projectile hit enemy! Damage: %d\n", projectile.getDamage());
+                break;  // Un projectile ne peut toucher qu'un seul enemy
+            }
         }
     }
 }
