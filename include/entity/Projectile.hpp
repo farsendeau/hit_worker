@@ -72,6 +72,7 @@ public:
     float getExplosionRadius() const { return EXPLOSION_RADIUS; }
     int getDamage() const { return damage; }
     ProjectileType getType() const { return type; }
+    bool isPlayerOwned() const { return playerOwned; }
 
     /**
      * Deactivate projectile (return to pool)
