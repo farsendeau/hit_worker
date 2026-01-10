@@ -27,6 +27,19 @@ void Player::update(const InputState &input, const Level &level)
         return;
     }
 
+    #ifdef DEBUG
+    // ==== DEBUG: Refill ammo (touche O) ====
+    static bool debugRefillPressed = false;
+    if (input.debugRefillAmmo && !debugRefillPressed) {
+        // Recharger 100% des munitions
+        ammo[0] = 999;  // FIST (infini)
+        ammo[1] = 255;  // PISTOL (max 255)
+        ammo[2] = 255;  // GRENADE (max 255)
+        DEBUG_LOG("DEBUG: Munitions rechargées à 100%%\n");
+    }
+    debugRefillPressed = input.debugRefillAmmo;
+    #endif
+
     // ==== WEAPON SYSTEM ====
     // Weapon switch (avant l'attaque)
     if (input.weaponSwitch && currentState != State::ATTACK) {
@@ -272,9 +285,16 @@ void Player::render(float cameraX, float cameraY) const
     #ifdef DEBUG
         // HUD DEBUG en haut à gauche (position fixe)
         if (g_debugFont) {
-            char buffer[64];
+            char buffer[128];
+            const char* weaponNames[] = {"FIST", "PISTOL", "GRENADE"};
+            int weaponIdx = static_cast<int>(currentWeapon);
+
             snprintf(buffer, sizeof(buffer), "HP:%d Lives:%d Inv:%d", hp, lives, invincibilityFrames);
             al_draw_text(g_debugFont, al_map_rgb(255, 255, 255), 5, 5, 0, buffer);
+
+            snprintf(buffer, sizeof(buffer), "Weapon: %s | Ammo: %d/%d/%d",
+                     weaponNames[weaponIdx], ammo[0], ammo[1], ammo[2]);
+            al_draw_text(g_debugFont, al_map_rgb(255, 255, 0), 5, 17, 0, buffer);
         }
 
         // Hitbox rouge

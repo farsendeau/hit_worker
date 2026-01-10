@@ -32,6 +32,11 @@ class Game
         //==== Fonction Private====
         void render();
 
+        // Edge detection pour les touches "single-press"
+        bool prevAttackKey{false};
+        bool prevWeaponSwitchKey{false};
+        bool prevRefillAmmoKey{false};
+
     public:
         InputState inputState{};
 

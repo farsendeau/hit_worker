@@ -13,6 +13,7 @@ struct InputState {
     bool debugDamage{false}; // à supprimer après le dev
     bool debugFrameByFrame{false}; // Touche M pour activer/désactiver le mode frame par frame
     bool debugNextFrame{false}; // Touche RIGHT arrow pour avancer d'une frame
+    bool debugRefillAmmo{false}; // Touche O pour recharger 100% munitions (DEBUG only)
 };
 
 #endif // INPUT_STATE

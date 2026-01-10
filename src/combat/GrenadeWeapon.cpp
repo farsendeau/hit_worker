@@ -35,9 +35,9 @@ bool GrenadeWeapon::tryAttack(bool facingRight, float playerX, float playerY,
 
     // Spawn grenade immediately (during startup frames)
     // Calculate spawn position
-    float spawnX = facingRight ?
-                   playerX + SPAWN_OFFSET_X :
-                   playerX - SPAWN_OFFSET_X - GRENADE_SIZE;
+    float spawnX = facingRight 
+        ? playerX + SPAWN_OFFSET_X 
+        : playerX - SPAWN_OFFSET_X - GRENADE_SIZE;
     float spawnY = playerY + SPAWN_OFFSET_Y;
 
     // Calculate velocity (parabolic trajectory)

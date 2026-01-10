@@ -155,17 +155,32 @@ void Game::handleInput()
 
     ALLEGRO_KEYBOARD_STATE keyState;
     al_get_keyboard_state(&keyState);
+
+    // États continus (hold)
     inputState.left = al_key_down(&keyState, ALLEGRO_KEY_Q);
     inputState.right = al_key_down(&keyState, ALLEGRO_KEY_D);
     inputState.up = al_key_down(&keyState, ALLEGRO_KEY_Z);
     inputState.down = al_key_down(&keyState, ALLEGRO_KEY_S);
     inputState.jump = al_key_down(&keyState, ALLEGRO_KEY_J);
-    inputState.attack = al_key_down(&keyState, ALLEGRO_KEY_H);
-    inputState.weaponSwitch = al_key_down(&keyState, ALLEGRO_KEY_F);
     inputState.pause = al_key_down(&keyState, ALLEGRO_KEY_G);
     inputState.debugDamage = al_key_down(&keyState, ALLEGRO_KEY_P); // à supprimer aprs le dev
     inputState.debugFrameByFrame = al_key_down(&keyState, ALLEGRO_KEY_M); // Mode frame par frame (debug)
     inputState.debugNextFrame = al_key_down(&keyState, ALLEGRO_KEY_RIGHT); // Avancer d'une frame (debug)
+
+    // Edge detection pour actions "single-press" (attaque, weapon switch, debug refill)
+    // Détecte uniquement la transition false→true
+    bool currentAttackKey = al_key_down(&keyState, ALLEGRO_KEY_H);
+    bool currentWeaponSwitchKey = al_key_down(&keyState, ALLEGRO_KEY_F);
+    bool currentRefillAmmoKey = al_key_down(&keyState, ALLEGRO_KEY_O);
+
+    inputState.attack = currentAttackKey && !prevAttackKey;  // Transition LOW→HIGH uniquement
+    inputState.weaponSwitch = currentWeaponSwitchKey && !prevWeaponSwitchKey;
+    inputState.debugRefillAmmo = currentRefillAmmoKey && !prevRefillAmmoKey;
+
+    // Sauvegarde pour la prochaine frame
+    prevAttackKey = currentAttackKey;
+    prevWeaponSwitchKey = currentWeaponSwitchKey;
+    prevRefillAmmoKey = currentRefillAmmoKey;
 
     // ici mettre en place une manete
 }
