@@ -47,7 +47,8 @@ GamePlayState::GamePlayState(StateManager* sm)
     // ========================================
 
     // Spawner 1 DummyEnemy pour test (Itération 1)
-    enemies[0] = std::make_unique<DummyEnemy>(200.0f, 100.0f);
+    // Position: Zone 2 (x=[640, 960], y=[192, 384])
+    enemies[0] = std::make_unique<DummyEnemy>(750.0f, 250.0f);
 
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
