@@ -52,6 +52,20 @@ public:
      */
     void render(float cameraX, float cameraY) const override = 0;
 
+    /**
+     * Update de l'IA (optionnel, override si l'ennemi a besoin d'IA)
+     * Permet de gérer des comportements avancés (poursuite, attaque, etc.)
+     * @param playerX Position X du joueur
+     * @param playerY Position Y du joueur
+     * @param level Niveau pour collisions
+     */
+    virtual void updateAI(float playerX, float playerY, const Level& level) {
+        (void)playerX;
+        (void)playerY;
+        (void)level;
+        // Par défaut: pas d'IA (pour DummyEnemy, etc.)
+    }
+
     // ==== Getters ====
     int getHp() const { return hp; }
     int getMaxHp() const { return maxHp; }

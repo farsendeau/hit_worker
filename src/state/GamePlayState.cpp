@@ -2,6 +2,7 @@
 #include "state/DeathState.hpp"
 #include "core/StateManager.hpp"
 #include "entity/DummyEnemy.hpp"
+#include "entity/Fioneur.hpp"
 
 GamePlayState::GamePlayState(StateManager* sm)
     : stateManager(sm)
@@ -49,6 +50,10 @@ GamePlayState::GamePlayState(StateManager* sm)
     // Spawner 1 DummyEnemy pour test (Itération 1)
     // Position: Zone 2 (x=[640, 960], y=[192, 384])
     enemies[0] = std::make_unique<DummyEnemy>(750.0f, 250.0f);
+
+    // Spawner 1 Fioneur pour test (Itération 2)
+    // Position: Zone 1 (x=[320, 640], y=[192, 384])
+    enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);
 
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
@@ -620,9 +625,17 @@ void GamePlayState::renderProjectiles(float cameraX, float cameraY) const
  */
 void GamePlayState::updateEnemies(const InputState& input)
 {
+    // Récupérer position du joueur pour l'IA des enemies
+    float playerX = player.getCenterX();
+    float playerY = player.getCenterY();
+
     for (auto& enemy : enemies) {
         if (enemy && enemy->isAlive()) {
+            // Update de base (invincibilité)
             enemy->update(input, level);
+
+            // Update IA (si l'ennemi en a une)
+            enemy->updateAI(playerX, playerY, level);
         }
     }
 }
