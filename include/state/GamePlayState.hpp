@@ -91,8 +91,12 @@ class GamePlayState: public AbstractState
 
         // Enemy management
         void checkProjectileEnemyCollisions();  // Collision projectiles vs enemies
+        void checkPlayerEnemyCollisions();      // Collision player vs enemies (contact damage)
+        void checkMeleeEnemyCollisions();       // Collision melee weapon vs enemies
         void updateEnemies(const InputState& input);
         void renderEnemies(float cameraX, float cameraY) const;
+        void resetEnemies();                    // Reset tous les enemies (respawn)
+        void resetProjectiles();                // Désactive tous les projectiles actifs
 };
 
 #endif

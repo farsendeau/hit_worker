@@ -46,7 +46,7 @@ private:
     static constexpr int FIONEUR_HP{40};
     static constexpr int FIONEUR_CONTACT_DAMAGE{10};
     static constexpr float FIONEUR_WIDTH{16.0f};
-    static constexpr float FIONEUR_HEIGHT{16.0f};
+    static constexpr float FIONEUR_HEIGHT{32.0f};
 
 public:
     /**
