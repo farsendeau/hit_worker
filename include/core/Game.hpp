@@ -22,11 +22,12 @@ class Game
         // states
         StateManager stateManager;
 
+        // HUD font (disponible en debug et release)
+        ALLEGRO_FONT* hudFont{nullptr};  // Arial 8px monochrome pour HUD
+
         #ifdef DEBUG
                 // Debug logging
                 ALLEGRO_TEXTLOG* debugLog{nullptr};
-                // Debug font
-                ALLEGRO_FONT* debugFont{nullptr};
         #endif
 
         //==== Fonction Private====
