@@ -31,7 +31,7 @@ par les fondations techniques avant d\'aborder la création du contenu.
 - ✅ **Phase 2:** Rendu et Tiles (100%)
 - ✅ **Phase 3:** Joueur et Physique (100%)
 - ✅ **Phase 4:** Combat de Base (100%)
-- ✅ **Phase 5:** Ennemis (83% - 5/6 itérations)
+- ✅ **Phase 5:** Ennemis et Items (100% - 6/6 itérations)
 - ⏳ **Phase 6:** Boss et Polish (0%)
 - ⏳ **Phase 7:** Level Design Final (0%)
 - ⏳ **Phase 8:** Audio et Polish Final (0%)
@@ -54,15 +54,15 @@ par les fondations techniques avant d\'aborder la création du contenu.
 - ✅ Combat bidirectionnel (player ↔ enemies, projectiles)
 - ✅ HUD (barre de vie, arme, munitions)
 - ✅ Système de projectiles (player et enemies)
+- ✅ Système de drop d'items (vie, munitions, 1-UP)
 - ⏳ Enemy spawning dynamique (à faire - Itération 6)
 
 ### Prochaines Étapes
 1. Itération 6: Enemy Spawning System (parser Tiled layer "enemy")
 2. Boss SADIMAN (phases 1 et 2)
-3. Système de drops d'items
-4. Checkpoints
-5. Audio (musique + SFX)
-6. Level design final (16 écrans)
+3. Checkpoints
+4. Audio (musique + SFX)
+5. Level design final (16 écrans)
 
 ---
 
@@ -661,25 +661,27 @@ public:
 };
 ```
 
-5.5 Système de drop d\'items (GDD Section 4.1)
+5.5 Système de drop d\'items (GDD Section 4.1) ✅ IMPLÉMENTÉ
 
-```cpp
-void Enemy::die() {
-    // Système aléatoire selon pourcentages GDD
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distrib(0, 99);
+**Implémentation réalisée :**
+- Classe `Item` avec object pool (max 20 items actifs)
+- 5 types d'items : MEDIUM_LIFE (+30 HP), FULL_LIFE (+100 HP), ONE_UP (+1 vie), PISTOL_AMMO (+10), GRENADE_AMMO (+1)
+- Système de probabilités à deux niveaux selon GDD :
+  - 60% chance de drop, 40% rien
+  - Si drop: 50% soin / 50% munition
+  - Soin: 70% Medium, 25% Full, 5% 1-UP
+  - Munition: 90% Pistol, 10% Grenade
+- Gravité des items (tombent au sol)
+- Collision joueur/item avec ramassage immédiat
+- HUD se met à jour automatiquement
 
-    int random = distrib(gen);
-
-    if (random < 30) {
-        // Drop item soin
-    } else if (random < 60) {
-        // Drop munitions
-    }
-    // Sinon rien
-}
-```
+**Fichiers créés/modifiés :**
+- `include/entity/Item.hpp` (nouveau)
+- `src/entity/Item.cpp` (nouveau)
+- `include/state/GamePlayState.hpp` (pool + méthodes)
+- `src/state/GamePlayState.cpp` (dropItem, applyItemEffect, collisions)
+- `include/entity/Enemy.hpp` (gameState pointer)
+- `src/entity/Enemy.cpp` (appel dropItem à la mort)
 
 Phase 6 : Boss et Polish
 

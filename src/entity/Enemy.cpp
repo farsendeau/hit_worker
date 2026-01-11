@@ -1,4 +1,5 @@
 #include "entity/Enemy.hpp"
+#include "state/GamePlayState.hpp"
 #include "utils/constant.h"
 #include <cstdio>
 
@@ -33,6 +34,11 @@ void Enemy::takeDamage(int damage)
         hp = 0;
         alive = false;
         DEBUG_LOG("Enemy killed!\n");
+
+        // Drop un item à la position de l'enemy (Phase 5.5)
+        if (gameState) {
+            gameState->dropItem(x, y);
+        }
     }
 }
 

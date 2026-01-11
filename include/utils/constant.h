@@ -37,6 +37,10 @@ constexpr int DEATH_FADE_DURATION{120};  // 2 secondes à 60 FPS
 // Joueur
 constexpr int PLAYER_START_LIVES{4};
 constexpr int MAX_AMMO{255};  // Limite 1 octet
+
+// Items (Phase 5.5 - Item Drop System)
+constexpr int MAX_ITEMS{20};        // Maximum items actifs simultanément
+constexpr float ITEM_SIZE{16.0f};   // Taille items (16×16px)
 constexpr float PLAYER_WALK_SPEED{2.0f};
 constexpr float PLAYER_JUMP_VELOCITY{-6.0f};
 constexpr float PLAYER_GRAVITY{0.4f};

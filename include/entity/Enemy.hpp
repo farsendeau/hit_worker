@@ -3,6 +3,9 @@
 
 #include "entity/Entity.hpp"
 
+// Forward declaration
+class GamePlayState;
+
 /**
  * Enemy - Classe de base abstraite pour tous les ennemis
  *
@@ -17,6 +20,9 @@ protected:
     int invincibilityFrames{};     // Frames d'invincibilité restantes (après hit)
     bool alive{true};              // Est vivant ?
     int contactDamage{};           // Dégâts infligés au joueur par contact
+
+    // ==== Référence GamePlayState (pour drop items) ====
+    GamePlayState* gameState{nullptr};
 
 public:
     /**
@@ -72,6 +78,9 @@ public:
     bool isAlive() const { return alive; }
     int getContactDamage() const { return contactDamage; }
     bool isInvincible() const { return invincibilityFrames > 0; }
+
+    // ==== Setter pour GamePlayState (item drop system) ====
+    void setGameState(GamePlayState* gps) { gameState = gps; }
 };
 
 #endif // ENEMY_HPP
