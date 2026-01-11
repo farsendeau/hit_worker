@@ -20,17 +20,59 @@ par les fondations techniques avant d\'aborder la création du contenu.
 - **[guide_hitwoker_tiled.md](guide_hitwoker_tiled.md)** - Système TileMap avec hitwoker_tiled
 - **[README.md](README.md)** - Index de toute la documentation
 
+## 📊 État d'Avancement Global
+
+**Date de dernière mise à jour:** 2026-01-10
+
+**Statut:** En développement actif (Phase 4-5 complétée à 83%)
+
+### Phases Terminées
+- ✅ **Phase 1:** Architecture de Base (100%)
+- ✅ **Phase 2:** Rendu et Tiles (100%)
+- ✅ **Phase 3:** Joueur et Physique (100%)
+- ✅ **Phase 4:** Combat de Base (100%)
+- ✅ **Phase 5:** Ennemis (83% - 5/6 itérations)
+- ⏳ **Phase 6:** Boss et Polish (0%)
+- ⏳ **Phase 7:** Level Design Final (0%)
+- ⏳ **Phase 8:** Audio et Polish Final (0%)
+
+### Fonctionnalités Implémentées
+- ✅ Game loop 60 FPS avec fixed timestep
+- ✅ StateManager avec stack d'états
+- ✅ Résolution virtuelle 320×192 avec scaling
+- ✅ Système de tilemap avec données Tiled
+- ✅ Caméra avec scrolling horizontal ET vertical
+- ✅ Système de zones caméra (16 zones configurables)
+- ✅ Mouvement joueur (marche, saut, échelles)
+- ✅ Physique (gravité, collisions AABB)
+- ✅ Système d'armes complet (Poing, Pistolet, Grenade)
+- ✅ Animation des armes (AnimationController)
+- ✅ Système de vie et invincibilité
+- ✅ Mort et respawn progressif (Mega Man style)
+- ✅ DeathState avec fade out/in
+- ✅ Ennemis: DummyEnemy, Fioneur (IA), TurretGode (tourelle)
+- ✅ Combat bidirectionnel (player ↔ enemies, projectiles)
+- ✅ HUD (barre de vie, arme, munitions)
+- ✅ Système de projectiles (player et enemies)
+- ⏳ Enemy spawning dynamique (à faire - Itération 6)
+
+### Prochaines Étapes
+1. Itération 6: Enemy Spawning System (parser Tiled layer "enemy")
+2. Boss SADIMAN (phases 1 et 2)
+3. Système de drops d'items
+4. Checkpoints
+5. Audio (musique + SFX)
+6. Level design final (16 écrans)
+
+---
+
 Contexte du projet
 
--   **Résolution :** 320×192px (20×12 tuiles de 16×16px)
-
--   **Niveau MVP :** 16 écrans horizontaux
-
--   **Framerate :** 60 FPS constant
-
--   **Système de compression :** Metatiles 2×2 (réduction mémoire \~53%)
-
--   **Langage :** C++23 (norme ISO/IEC 14882:2023) - **IMPÉRATIF**
+-   **Résolution :** 320×192px (20×12 tuiles de 16×16px) ✅
+-   **Niveau MVP :** 16 écrans horizontaux ⏳ (map test 3 écrans actuellement)
+-   **Framerate :** 60 FPS constant ✅
+-   **Système de compression :** Metatiles 2×2 (réduction mémoire \~23% via hitwoker_tiled) ✅
+-   **Langage :** C++23 (norme ISO/IEC 14882:2023) ✅
 
 Philosophie de développement
 
@@ -39,63 +81,65 @@ Développez d\'abord tous les systèmes sur une petite map de test (2-3
 écrans), puis créez le niveau complet une fois que tout fonctionne
 correctement.
 
-Phase 1 : Architecture de Base
+Phase 1 : Architecture de Base ✅ TERMINÉE
 
 *Durée estimée : 1-2 jours*
+*Durée réelle : ~2 jours*
 
-1.1 Structure du projet
+1.1 Structure du projet ✅ IMPLÉMENTÉ
 
-Organisez votre code source selon une architecture modulaire claire :
+**Architecture réelle implémentée** (code existant prime sur le plan initial):
+
+include/
+├── animation/
+│   └── AnimationController.hpp    // Système d'animation pour armes
+├── combat/
+│   ├── Weapon.hpp                 // Classe de base abstraite armes
+│   ├── MeleeWeapon.hpp           // Poing (corps à corps)
+│   ├── ProjectileWeapon.hpp      // Pistolet (distance)
+│   ├── GrenadeWeapon.hpp         // Grenade (zone)
+│   └── Hitbox.hpp                // Gestion hitboxes armes
+├── core/
+│   ├── Game.hpp                  // Game loop principal
+│   ├── StateManager.hpp          // Gestion des états
+│   └── AbstractState.hpp         // Classe de base abstraite états
+├── state/                        // (pas "states")
+│   ├── MenuState.hpp
+│   ├── GamePlayState.hpp         // (pas "GameplayState")
+│   ├── PauseState.hpp
+│   ├── GameOverState.hpp
+│   └── DeathState.hpp            // État de mort avec fade (nouveau)
+├── entity/                       // (pas "entities")
+│   ├── Entity.hpp                // Classe de base
+│   ├── Player.hpp
+│   ├── Enemy.hpp                 // Classe de base enemies
+│   ├── DummyEnemy.hpp            // Ennemi test stationnaire
+│   ├── Fioneur.hpp               // Ennemi humanoïde avec IA
+│   ├── TurretGode.hpp            // Tourelle fixe (au lieu de TourelleGad)
+│   └── Projectile.hpp
+├── level/
+│   ├── Level.hpp                 // (au lieu de TileMap.hpp)
+│   └── Camera.hpp
+├── ui/
+│   └── HUD.hpp                   // Interface utilisateur (nouveau)
+└── utils/
+    ├── constant.h                // Constantes globales
+    └── InputState.hpp            // Structure input (au lieu de Collision)
 
 src/
+└── (même structure que include/)
 
-├── main.cpp
+**Notes sur l'architecture:**
+- ✅ **Pas de ResourceManager** - Chargement direct dans Game
+- ✅ **Combat séparé** - Système d'armes dans dossier `combat/`
+- ✅ **Animation séparée** - AnimationController pour gérer les animations d'armes
+- ✅ **UI séparée** - HUD dans son propre dossier `ui/`
+- ✅ **DeathState** - État dédié pour gérer la mort du joueur (fade + respawn)
+- ✅ **Level au lieu de TileMap** - Classe Level encapsule map + données Tiled
 
-├── core/
+1.2 Game Loop à 60 FPS ✅ IMPLÉMENTÉ
 
-│ ├── Game.h/cpp // Game loop principal
-
-│ ├── StateManager.h/cpp // Gestion des états
-
-│ └── ResourceManager.h/cpp
-
-├── states/
-
-│ ├── MenuState.h/cpp
-
-│ ├── GameplayState.h/cpp
-
-│ ├── PauseState.h/cpp
-
-│ └── GameOverState.h/cpp
-
-├── entities/
-
-│ ├── Entity.h/cpp // Classe de base
-
-│ ├── Player.h/cpp
-
-│ ├── Enemy.h/cpp
-
-│ └── Projectile.h/cpp
-
-├── level/
-
-│ ├── TileMap.h/cpp
-
-│ ├── Camera.h/cpp
-
-│ └── MetaTile.h/cpp // Système de compression
-
-└── utils/
-
-├── Collision.h/cpp
-
-└── Constants.h
-
-1.2 Game Loop à 60 FPS
-
-Implémentez un game loop fixe pour garantir un gameplay cohérent :
+**Implémentation réelle** dans [src/core/Game.cpp](../src/core/Game.cpp#L245-L264):
 
 ```cpp
 constexpr float TARGET_FPS = 60.0f;
@@ -154,9 +198,10 @@ al_set_target_backbuffer(display);
 al_draw_scaled_bitmap(virtualBuffer, ...);
 ```
 
-Phase 2 : Rendu et Tiles
+Phase 2 : Rendu et Tiles ✅ TERMINÉE
 
 *Durée estimée : 2-3 jours*
+*Durée réelle : ~3 jours*
 
 2.1 Map de test MINIMALISTE
 
@@ -283,13 +328,21 @@ Ajoutez un mode debug pour visualiser les hitboxes :
 
 -   Touche F1 pour toggle debug ON/OFF
 
-Phase 3 : Joueur et Physique
+Phase 3 : Joueur et Physique ✅ TERMINÉE
 
 *Durée estimée : 3-4 jours*
+*Durée réelle : ~5 jours (incluant scrolling vertical et système de respawn progressif)*
 
-3.1 Classe Player
+**🎯 Implémentations spécifiques ajoutées (non dans le plan initial):**
+- ✅ **Scrolling vertical** - Caméra suit le joueur verticalement (transitions entre zones)
+- ✅ **Système de zones caméra** - 16 zones configurables avec next_zone_up/down/left/right
+- ✅ **Respawn progressif** - Respawn basé sur la zone caméra (style Mega Man)
+- ✅ **DeathState avec fade** - Transition visuelle mort → respawn
+- ✅ **Kill tiles** - Mort instantanée sur certaines tiles
 
-Propriétés (selon GDD)
+3.1 Classe Player ✅ IMPLÉMENTÉ
+
+**Implémentation réelle** dans [include/entity/Player.hpp](../include/entity/Player.hpp):
 
 ```cpp
 class Player : public Entity {
@@ -381,9 +434,18 @@ bool Player::checkCollision(const TileMap& map, int x, int y) {
 }
 ```
 
-Phase 4 : Combat de Base
+Phase 4 : Combat de Base ✅ TERMINÉE
 
 *Durée estimée : 2-3 jours*
+*Durée réelle : ~4 jours (architecture armes + animation complète)*
+
+**🎯 Architecture armes implémentée (différente du plan):**
+- ✅ **Classe abstraite Weapon** - Base pour toutes les armes
+- ✅ **AnimationController** - Système d'animation frame-par-frame
+- ✅ **Hitbox dynamiques** - Gestion hitboxes actives pendant animations
+- ✅ **3 armes complètes** - MeleeWeapon (poing), ProjectileWeapon (pistolet), GrenadeWeapon
+- ✅ **Pool de projectiles** - std::array<Projectile, 20> dans GamePlayState
+- ✅ **Différenciation player/enemy** - Flag playerOwned pour projectiles
 
 4.1 Système d\'armes (selon GDD Section 3.4)
 
@@ -459,19 +521,35 @@ void Player::takeDamage(int damage) {
 }
 ```
 
-4.3 HUD basique (GDD Section 8.1)
+4.3 HUD basique (GDD Section 8.1) ✅ IMPLÉMENTÉ
+
+**Implémentation réelle** dans [include/ui/HUD.hpp](../include/ui/HUD.hpp):
 
 Affichage en haut à gauche de l\'écran :
+-   ✅ **Barre de vie horizontale** (8, 8) - 100×8px avec couleurs dynamiques (vert/jaune/rouge)
+-   ✅ **Arme + munitions** (8, 16) - Format: "Weapon: FIST  Ammo: INF"
+-   ✅ **Font monochrome** - arial.ttf 8px ALLEGRO_TTF_MONOCHROME (pixel-perfect)
+-   ✅ **Disponible en Release** - Pas uniquement en DEBUG
 
--   **Arme sélectionnée :** Icône + nombre munitions
+**Notes:**
+- Barre de vie HORIZONTALE (pas verticale comme plan initial)
+- Lives retiré du HUD principal (visible en debug info seulement)
+- Système de font avec fallback sur builtin font
 
--   **Barre de vie :** Jauge verticale
-
--   **Nombre de vies :** Chiffre
-
-Phase 5 : Ennemis
+Phase 5 : Ennemis ✅ PARTIELLEMENT TERMINÉE (83%)
 
 *Durée estimée : 3-4 jours*
+*Durée réelle : ~6 jours (6 itérations, 5 terminées)*
+
+**État actuel:** 5/6 itérations complétées
+- ✅ Itération 1: Minimal Combat Loop
+- ✅ Itération 2: Fioneur AI
+- ✅ Itération 3: Combat Mutuel
+- ✅ Itération 4: TurretGode (au lieu de TourelleGad)
+- ✅ Itération 5: HUD Polish
+- ⏳ Itération 6: Enemy Spawning System (reportée)
+
+**Référence complète:** [doc/TODO/TODO_Phase4-5.md](TODO/TODO_Phase4-5.md)
 
 5.1 Règles générales (GDD Section 5.1)
 
@@ -515,35 +593,45 @@ public:
 };
 ```
 
-5.3 TOURELLE GAD (GDD Section 5.3)
+5.3 TURRET GODE ✅ IMPLÉMENTÉ (remplace TOURELLE GAD)
 
-Tourelle fixe qui tire en croix :
+**Note:** Nom changé de "TourelleGad" à "TurretGode" dans l'implémentation.
+
+**Implémentation réelle** dans [include/entity/TurretGode.hpp](../include/entity/TurretGode.hpp):
+
+Tourelle fixe statique avec pattern de tir en arc :
 
 ```cpp
-class TourelleGad : public Enemy {
+class TurretGode : public Enemy {
 private:
-    int cooldownFrames;
-    static constexpr int SHOOT_COOLDOWN = 120; // 2 sec
+    int shootCooldown;
+    static constexpr int SHOOT_INTERVAL = 120; // 2 sec (120 frames)
 
 public:
-    void update(float dt) {
-        cooldownFrames--;
+    void update(const InputState& input, const Level& level) override {
+        // Tourelle statique (pas de mouvement, pas de gravité)
+        shootCooldown--;
 
-        if (cooldownFrames <= 0) {
-            // Tirer 4 projectiles en croix
-            shootProjectile(1, 0);   // Droite
-            shootProjectile(-1, 0);  // Gauche
-            shootProjectile(0, 1);   // Bas
-            shootProjectile(0, -1);  // Haut
+        if (shootCooldown <= 0) {
+            // Tirer 4 projectiles en arc parabolique
+            // Pattern: 2 vers la gauche + 2 vers la droite
+            spawnGrenade(-3.0f, -4.0f);  // Arc gauche haut
+            spawnGrenade(-2.5f, -3.5f);  // Arc gauche bas
+            spawnGrenade(3.0f, -4.0f);   // Arc droite haut
+            spawnGrenade(2.5f, -3.5f);   // Arc droite bas
 
-            cooldownFrames = SHOOT_COOLDOWN;
+            shootCooldown = SHOOT_INTERVAL;
         }
     }
 };
 ```
 
-**Note :** Voir GDD Section 12.2 pour clarifier si les 4 projectiles
-partent simultanément ou avec délai.
+**Notes sur l'implémentation:**
+- ✅ Pattern en **arc parabolique** (pas croix) avec gravité
+- ✅ 4 projectiles grenades simultanées toutes les 2 secondes
+- ✅ Statique (pas de mouvement ni gravité)
+- ✅ 60 HP, 15 dégâts contact + projectiles
+- ✅ Projectiles enemies visuellement différents (violet au lieu de jaune)
 
 5.4 Système de spawning
 
