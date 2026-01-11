@@ -273,6 +273,9 @@ void GamePlayState::render()
             al_draw_text(g_debugFont, textColor, 5, 15, 0, "Press RIGHT ARROW to advance");
         }
     #endif
+
+    // Dessiner le HUD (overlay, toujours en dernier)
+    hud.render(player);
 }
 
 void GamePlayState::handleInput()

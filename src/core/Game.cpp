@@ -2,11 +2,13 @@
 #include "state/MenuState.hpp"
 #include "state/GamePlayState.hpp" // TODO à supprimer après les tests
 
+// Font globale pour le HUD (disponible en release et debug)
+ALLEGRO_FONT* g_debugFont = nullptr;
+
 #ifdef DEBUG
 // Définition de la variable globale pour le debug log
 ALLEGRO_TEXTLOG* g_debugLog = nullptr;
-// Font globale pour affichage DEBUG
-ALLEGRO_FONT* g_debugFont = nullptr;
+ALLEGRO_FONT* g_debugSmallFont = nullptr;  // Pointe vers g_debugFont (debug uniquement)
 #endif
 
 Game::Game()
@@ -17,17 +19,22 @@ Game::~Game()
 {
     // Nettoyage dans l'ordre inverse de création
     #ifdef DEBUG
-        if (debugFont) {
-            g_debugFont = nullptr;  // Invalider le pointeur global
-            al_destroy_font(debugFont);
-            debugFont = nullptr;
-        }
+        // debugSmallFont pointe vers hudFont (pas besoin de destroy séparé)
+        g_debugSmallFont = nullptr;  // Invalider le pointeur global
+
         if (debugLog) {
             g_debugLog = nullptr;  // Invalider le pointeur global
             al_close_native_text_log(debugLog);
             debugLog = nullptr;
         }
     #endif
+
+    // Détruire la font HUD (disponible en debug et release)
+    if (hudFont) {
+        g_debugFont = nullptr;  // Invalider le pointeur global
+        al_destroy_font(hudFont);
+        hudFont = nullptr;
+    }
 
     if (timer) al_destroy_timer(timer);
     if (eventQueue) al_destroy_event_queue(eventQueue);
@@ -58,6 +65,9 @@ bool Game::init()
     }
 
     al_init_font_addon();
+    if (!al_init_ttf_addon()) {
+        return false;
+    }
 
     // Obtenir la résolution de l'écran préféré
     ALLEGRO_MONITOR_INFO info;
@@ -107,6 +117,16 @@ bool Game::init()
     //stateManager.change(new MenuState());
     stateManager.change(new GamePlayState(&stateManager));
 
+    // Charger arial.ttf en mode monochrome pour netteté maximale (HUD)
+    // ALLEGRO_TTF_MONOCHROME = rendu sans antialiasing (bitmap pur)
+    hudFont = al_load_ttf_font("font/arial.ttf", 8, ALLEGRO_TTF_MONOCHROME);
+    g_debugFont = hudFont;  // Exposer la font globalement
+    if (!hudFont) {
+        // Fallback: créer builtin font
+        hudFont = al_create_builtin_font();
+        g_debugFont = hudFont;
+    }
+
 #ifdef DEBUG
     // Ouvrir la fenêtre de log debug
     debugLog = al_open_native_text_log("Hit Worker - Debug Log", ALLEGRO_TEXTLOG_MONOSPACE);
@@ -116,14 +136,14 @@ bool Game::init()
         al_append_native_text_log(debugLog, "Compiled with -DDEBUG flag\n");
         al_append_native_text_log(debugLog, "Virtual resolution: 320x192\n");
         al_append_native_text_log(debugLog, "\n");
+
+        if (!hudFont) {
+            DEBUG_LOG("ERREUR: Impossible de charger arial.ttf (8px)!\n");
+        }
     }
 
-    // Créer la font built-in pour le HUD DEBUG
-    debugFont = al_create_builtin_font();
-    g_debugFont = debugFont;  // Exposer la font globalement
-    if (!debugFont) {
-        DEBUG_LOG("ERREUR: Impossible de créer la debug font!\n");
-    }
+    // Utiliser la même font pour le debug
+    g_debugSmallFont = hudFont;
 #endif
 
     return true;

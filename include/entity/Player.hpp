@@ -87,10 +87,13 @@ class Player: public Entity
 
         // Getters
         int getHp() const { return hp; }
+        int getMaxHp() const { return 100; }  // Max HP constant
         State getState() const { return currentState; }
         int getLives() const { return lives; }
         float getWidth() const { return width; }
         float getHeight() const { return height; }
+        Weapon getCurrentWeaponType() const { return currentWeapon; }
+        int getAmmo(int weaponIndex) const { return ammo[weaponIndex]; }
 
         // Setters pour le reset
         void setState(State newState) { currentState = newState; }

@@ -53,13 +53,15 @@ constexpr float ZONE_HEIGHT{VIRTUAL_HEIGHT};
 // Vitesses de scrolling pendant les transitions
 constexpr float VERTICAL_SCROLL_SPEED{4.0f};
 
+// ========== FONTS GLOBALES ==========
+// Font globale pour affichage HUD (définie dans Game.cpp)
+extern ALLEGRO_FONT* g_debugFont;  // Arial 8px monochrome (pour HUD)
+
 // ========== DEBUG ==========
 #ifdef DEBUG
     // Variable globale pour le debug log (définie dans Game.cpp)
     extern ALLEGRO_TEXTLOG* g_debugLog;
-
-    // Font globale pour affichage DEBUG (définie dans Game.cpp)
-    extern ALLEGRO_FONT* g_debugFont;
+    extern ALLEGRO_FONT* g_debugSmallFont;  // Pointe vers debugFont (debug uniquement)
 
     // Macro pour logger facilement depuis n'importe où
     #define DEBUG_LOG(format, ...) \

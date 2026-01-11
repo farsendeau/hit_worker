@@ -9,6 +9,7 @@
 #include "../entity/Player.hpp"
 #include "../entity/Projectile.hpp"
 #include "../entity/Enemy.hpp"
+#include "../ui/HUD.hpp"
 #include <array>
 #include <memory>
 
@@ -50,6 +51,9 @@ class GamePlayState: public AbstractState
         // Enemy pool
         static constexpr int MAX_ENEMIES{10};  // Maximum 10 enemies sur la même caméra
         std::array<std::unique_ptr<Enemy>, MAX_ENEMIES> enemies;
+
+        // HUD (Interface utilisateur)
+        HUD hud;
 
         // Mode frame by frame (debug)
         #ifdef DEBUG

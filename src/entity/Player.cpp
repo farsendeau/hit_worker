@@ -283,32 +283,18 @@ void Player::render(float cameraX, float cameraY) const
     }
 
     #ifdef DEBUG
-        // HUD DEBUG en haut à gauche (position fixe)
-        if (g_debugFont) {
-            char buffer[128];
-            const char* weaponNames[] = {"FIST", "PISTOL", "GRENADE"};
-            int weaponIdx = static_cast<int>(currentWeapon);
-
-            snprintf(buffer, sizeof(buffer), "HP:%d Lives:%d Inv:%d", hp, lives, invincibilityFrames);
-            al_draw_text(g_debugFont, al_map_rgb(255, 255, 255), 5, 5, 0, buffer);
-
-            snprintf(buffer, sizeof(buffer), "Weapon: %s | Ammo: %d/%d/%d",
-                     weaponNames[weaponIdx], ammo[0], ammo[1], ammo[2]);
-            al_draw_text(g_debugFont, al_map_rgb(255, 255, 0), 5, 17, 0, buffer);
-        }
-
-        // Hitbox rouge
+        // Debug: Hitbox rouge
         al_draw_rectangle(
             screenX, screenY,
             screenX + width, screenY + height,
             al_map_rgb(255, 0, 0), 1
         );
 
-        // Flèche de direction
+        // Debug: Flèche de direction
         float arrowX = screenX + width / 2.0f;
         float arrowY = screenY + height / 2.0f;
         float arrowEndX = arrowX + (facingRight ? 10.0f : -10.0f);
-        
+
         al_draw_line(arrowX, arrowY, arrowEndX, arrowY, al_map_rgb(255, 255, 0), 2);
         // Pointe de flèche
         if (facingRight) {
@@ -317,6 +303,20 @@ void Player::render(float cameraX, float cameraY) const
         } else {
             al_draw_line(arrowEndX, arrowY, arrowEndX + 3, arrowY - 3, al_map_rgb(255, 255, 0), 2);
             al_draw_line(arrowEndX, arrowY, arrowEndX + 3, arrowY + 3, al_map_rgb(255, 255, 0), 2);
+        }
+
+        // Debug: Informations joueur (EN BAS D'ÉCRAN, petite font)
+        // HP, Weapon, Ammo sont dans le HUD - ici seulement les infos techniques
+        if (g_debugSmallFont) {
+            char buffer[128];
+            const char* stateNames[] = {"IDLE", "WALK", "JUMP", "FALL", "CLIMB", "ATTACK", "DEAD"};
+            int stateIdx = static_cast<int>(currentState);
+            const char* stateName = (stateIdx >= 0 && stateIdx < 7) ? stateNames[stateIdx] : "?";
+
+            // Ligne unique avec les infos techniques
+            snprintf(buffer, sizeof(buffer), "Lives:%d | Inv:%d | Pos:(%.0f,%.0f) | State:%s",
+                     lives, invincibilityFrames, x, y, stateName);
+            al_draw_text(g_debugSmallFont, al_map_rgb(255, 0, 0), 2, 177, 0, buffer);  // Rouge
         }
     #endif
 }
