@@ -9,9 +9,12 @@
 #include "../entity/Player.hpp"
 #include "../entity/Projectile.hpp"
 #include "../entity/Enemy.hpp"
+#include "../entity/Item.hpp"
 #include "../ui/HUD.hpp"
 #include <array>
 #include <memory>
+#include <optional>
+#include <random>
 
 // Forward declarations
 class StateManager;
@@ -52,6 +55,10 @@ class GamePlayState: public AbstractState
         static constexpr int MAX_ENEMIES{10};  // Maximum 10 enemies sur la même caméra
         std::array<std::unique_ptr<Enemy>, MAX_ENEMIES> enemies;
 
+        // Item pool (Phase 5.5 - Item Drop System)
+        std::array<Item, MAX_ITEMS> itemPool;
+        std::mt19937 randomGen{std::random_device{}()};  // Générateur aléatoire pour drops
+
         // HUD (Interface utilisateur)
         HUD hud;
 
@@ -83,6 +90,9 @@ class GamePlayState: public AbstractState
         void finishTransition();          // Termine une transition verticale
         void applyZoneBoundaries();       // Empêche le joueur de sortir de sa zone
 
+        // Item drop system (Itération 3)
+        std::optional<ItemType> calculateDropType();  // Calcule quel type d'item dropper
+
         bool isInDeathSequence{false};    // Flag pour éviter double-push de DeathState
 
     public:
@@ -102,6 +112,14 @@ class GamePlayState: public AbstractState
         void renderEnemies(float cameraX, float cameraY) const;
         void resetEnemies();                    // Reset tous les enemies (respawn)
         void resetProjectiles();                // Désactive tous les projectiles actifs
+
+        // Item management (Phase 5.5 - Item Drop System)
+        Item* getInactiveItem();                 // Trouve un item inactif dans le pool
+        void dropItem(float x, float y);         // Drop un item à la position donnée
+        void updateItems(const InputState& input);
+        void renderItems(float cameraX, float cameraY) const;
+        void checkPlayerItemCollisions();        // Collision player vs items (ramassage)
+        void applyItemEffect(ItemType type);     // Applique l'effet d'un item au joueur
 };
 
 #endif

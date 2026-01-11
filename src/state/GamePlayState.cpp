@@ -53,14 +53,17 @@ GamePlayState::GamePlayState(StateManager* sm)
     // Spawner 1 DummyEnemy pour test (Itération 1)
     // Position: Zone 2 (x=[640, 960], y=[192, 384])
     enemies[0] = std::make_unique<DummyEnemy>(750.0f, 250.0f);
+    enemies[0]->setGameState(this);  // Pour item drop
 
     // Spawner 1 Fioneur pour test (Itération 2)
     // Position: Zone 1 (x=[320, 640], y=[192, 384])
     enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);
+    enemies[1]->setGameState(this);  // Pour item drop
 
     // Spawner 1 TurretGode pour test (Itération 4)
     // Position: Zone 3 (x=[640, 960], y=[384, 576]) - EN DESSOUS de Zone 2
     enemies[2] = std::make_unique<TurretGode>(176.0f, 304.0f, this);
+    enemies[2]->setGameState(this);  // Pour item drop
 
     DEBUG_LOG("GamePlayState initialized\n");
     DEBUG_LOG("Level: %d\n", currentLevel);
@@ -198,6 +201,12 @@ void GamePlayState::update(const InputState &input)
     // 6.8. Collision player vs enemies - contact damage (Itération 3)
     checkPlayerEnemyCollisions();
 
+    // 6.9. Update items (Phase 5.5 - Item Drop System)
+    updateItems(input);
+
+    // 6.10. Collision player vs items (ramassage)
+    checkPlayerItemCollisions();
+
     // 7. Limiter le joueur aux bords de la zone
     applyZoneBoundaries();
 }
@@ -243,6 +252,9 @@ void GamePlayState::render()
 
     // Dessiner les enemies (avant le joueur pour layering)
     renderEnemies(camera.getX(), camera.getY());
+
+    // Dessiner les items (Phase 5.5 - Item Drop System)
+    renderItems(camera.getX(), camera.getY());
 
     // Dessiner le joueur
     player.render(camera.getX(), camera.getY());
@@ -837,8 +849,11 @@ void GamePlayState::resetEnemies()
     // Recréer les enemies hardcodés aux positions initiales
     // TODO Itération 6: Parser depuis Tiled au lieu de hardcode
     enemies[0] = std::make_unique<DummyEnemy>(750.0f, 250.0f);  // Zone 2
+    enemies[0]->setGameState(this);  // Pour item drop
     enemies[1] = std::make_unique<Fioneur>(500.0f, 250.0f);     // Zone 1
+    enemies[1]->setGameState(this);  // Pour item drop
     enemies[2] = std::make_unique<TurretGode>(750.0f, 450.0f, this);  // Zone 3 (en dessous de Zone 2)
+    enemies[2]->setGameState(this);  // Pour item drop
 
     DEBUG_LOG("Enemies reset to initial positions\n");
 }
@@ -905,6 +920,205 @@ void GamePlayState::checkEnemyProjectilePlayerCollisions()
             projectile.deactivate();
 
             DEBUG_LOG("Enemy projectile hit player! Damage: %d\n", projectile.getDamage());
+        }
+    }
+}
+
+// ============================================================
+// Item Management (Phase 5.5 - Item Drop System)
+// ============================================================
+
+/**
+ * Trouve un item inactif dans le pool
+ * @return Pointeur vers item inactif, ou nullptr si pool plein
+ */
+Item* GamePlayState::getInactiveItem()
+{
+    for (auto& item : itemPool) {
+        if (!item.isActive()) {
+            return &item;
+        }
+    }
+
+    DEBUG_LOG("WARNING: Item pool exhausted!\n");
+    return nullptr;
+}
+
+/**
+ * Calcule quel type d'item dropper selon probabilités GDD Section 4.2-4.3
+ *
+ * Système à deux niveaux:
+ * 1. 60% chance de drop (40% rien)
+ * 2. Si drop: 50% soin (Medium Life 70%, Full Life 25%, 1-UP 5%)
+ *             50% munition (Pistol Ammo 90%, Grenade 10%)
+ *
+ * @return std::optional<ItemType> Type d'item à dropper, ou nullopt si pas de drop
+ */
+std::optional<ItemType> GamePlayState::calculateDropType()
+{
+    std::uniform_int_distribution<int> dropDist(0, 99);
+
+    // Niveau 1: Drop item? (60% oui)
+    if (dropDist(randomGen) >= 60) {
+        DEBUG_LOG("Drop roll: NO DROP\n");
+        return std::nullopt;
+    }
+
+    // Niveau 2: Soin ou munition? (50/50)
+    std::uniform_int_distribution<int> categoryDist(0, 1);
+    bool isSoin = (categoryDist(randomGen) == 0);
+
+    if (isSoin) {
+        // Soin: 70% Medium, 25% Full, 5% 1-UP
+        int roll = dropDist(randomGen);
+        if (roll < 70) {
+            DEBUG_LOG("Drop roll: MEDIUM_LIFE\n");
+            return ItemType::MEDIUM_LIFE;
+        }
+        if (roll < 95) {
+            DEBUG_LOG("Drop roll: FULL_LIFE\n");
+            return ItemType::FULL_LIFE;
+        }
+        DEBUG_LOG("Drop roll: ONE_UP\n");
+        return ItemType::ONE_UP;
+    } else {
+        // Munition: 90% Pistol, 10% Grenade
+        int roll = dropDist(randomGen);
+        if (roll < 90) {
+            DEBUG_LOG("Drop roll: PISTOL_AMMO\n");
+            return ItemType::PISTOL_AMMO;
+        }
+        DEBUG_LOG("Drop roll: GRENADE_AMMO\n");
+        return ItemType::GRENADE_AMMO;
+    }
+}
+
+/**
+ * Drop un item à la position donnée selon probabilités GDD
+ * @param x Position X de l'item
+ * @param y Position Y de l'item
+ */
+void GamePlayState::dropItem(float x, float y)
+{
+    // Calculer le type d'item à dropper
+    auto itemType = calculateDropType();
+
+    // Pas de drop si nullopt
+    if (!itemType.has_value()) {
+        return;
+    }
+
+    // Trouver un item inactif dans le pool
+    Item* item = getInactiveItem();
+    if (item) {
+        item->spawn(itemType.value(), x, y);
+        DEBUG_LOG("Item dropped at (%.1f, %.1f)\n", x, y);
+    }
+}
+
+/**
+ * Update tous les items actifs
+ */
+void GamePlayState::updateItems(const InputState& input)
+{
+    for (auto& item : itemPool) {
+        if (item.isActive()) {
+            item.update(input, level);
+        }
+    }
+}
+
+/**
+ * Render tous les items actifs
+ */
+void GamePlayState::renderItems(float cameraX, float cameraY) const
+{
+    for (const auto& item : itemPool) {
+        if (item.isActive()) {
+            item.render(cameraX, cameraY);
+        }
+    }
+}
+
+/**
+ * Vérifie les collisions entre le joueur et les items
+ * Si collision: applique l'effet et désactive l'item
+ */
+void GamePlayState::checkPlayerItemCollisions()
+{
+    // Hitbox du joueur
+    float playerLeft = player.getX();
+    float playerRight = playerLeft + player.getWidth();
+    float playerTop = player.getY();
+    float playerBottom = playerTop + player.getHeight();
+
+    // Tester contre chaque item actif
+    for (auto& item : itemPool) {
+        if (!item.isActive()) {
+            continue;
+        }
+
+        // Hitbox de l'item (16×16px)
+        float itemLeft = item.getX();
+        float itemRight = itemLeft + item.getWidth();
+        float itemTop = item.getY();
+        float itemBottom = itemTop + item.getHeight();
+
+        // AABB collision test
+        bool collision = (playerLeft < itemRight && playerRight > itemLeft &&
+                         playerTop < itemBottom && playerBottom > itemTop);
+
+        if (collision) {
+            // Appliquer l'effet de l'item
+            applyItemEffect(item.getType());
+
+            // Désactiver l'item (retour au pool)
+            item.deactivate();
+
+            DEBUG_LOG("Item picked up at (%.1f, %.1f)\n", item.getX(), item.getY());
+        }
+    }
+}
+
+/**
+ * Applique l'effet d'un item au joueur
+ * @param type Type d'item ramassé
+ */
+void GamePlayState::applyItemEffect(ItemType type)
+{
+    switch (type) {
+        case ItemType::MEDIUM_LIFE: {
+            int oldHp = player.getHp();
+            int newHp = std::min(oldHp + 30, player.getMaxHp());
+            player.setHp(newHp);
+            DEBUG_LOG("Item: MEDIUM_LIFE, HP: %d -> %d\n", oldHp, newHp);
+            break;
+        }
+        case ItemType::FULL_LIFE: {
+            int oldHp = player.getHp();
+            player.setHp(player.getMaxHp());
+            DEBUG_LOG("Item: FULL_LIFE, HP: %d -> %d\n", oldHp, player.getMaxHp());
+            break;
+        }
+        case ItemType::ONE_UP: {
+            int oldLives = player.getLives();
+            player.setLives(oldLives + 1);
+            DEBUG_LOG("Item: 1-UP, Lives: %d -> %d\n", oldLives, oldLives + 1);
+            break;
+        }
+        case ItemType::PISTOL_AMMO: {
+            int oldAmmo = player.getAmmo(static_cast<int>(Player::Weapon::PISTOL));
+            int newAmmo = std::min(oldAmmo + 10, MAX_AMMO);
+            player.setAmmo(static_cast<int>(Player::Weapon::PISTOL), newAmmo);
+            DEBUG_LOG("Item: PISTOL_AMMO, Ammo: %d -> %d\n", oldAmmo, newAmmo);
+            break;
+        }
+        case ItemType::GRENADE_AMMO: {
+            int oldAmmo = player.getAmmo(static_cast<int>(Player::Weapon::GRENADE));
+            int newAmmo = std::min(oldAmmo + 1, MAX_AMMO);
+            player.setAmmo(static_cast<int>(Player::Weapon::GRENADE), newAmmo);
+            DEBUG_LOG("Item: GRENADE_AMMO, Ammo: %d -> %d\n", oldAmmo, newAmmo);
+            break;
         }
     }
 }

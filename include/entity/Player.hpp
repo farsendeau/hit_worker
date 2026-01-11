@@ -94,6 +94,7 @@ class Player: public Entity
         float getHeight() const { return height; }
         Weapon getCurrentWeaponType() const { return currentWeapon; }
         int getAmmo(int weaponIndex) const { return ammo[weaponIndex]; }
+        void setAmmo(int weaponIndex, int value) { ammo[weaponIndex] = std::min(value, MAX_AMMO); }
 
         // Setters pour le reset
         void setState(State newState) { currentState = newState; }
