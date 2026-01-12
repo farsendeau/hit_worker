@@ -11,6 +11,13 @@
 
 
 // ========================================
+// DIMENSIONS DE LA MAP
+// ========================================
+
+constexpr int MAP_WIDTH_TILES = 100;
+constexpr int MAP_HEIGHT_TILES = 36;
+
+// ========================================
 // DATABLOC VISUAL - Blocs 2×2 pour affichage (fusion des 3 couches)
 // ========================================
 // Nombre de blocs: 18
