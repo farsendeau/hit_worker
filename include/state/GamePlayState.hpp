@@ -32,7 +32,7 @@ class GamePlayState: public AbstractState
         ALLEGRO_BITMAP *tileset{nullptr};
         // Constantes de map
         static constexpr int TILE_SIZE = 16;
-        static constexpr int MAP_WIDTH_TILES = 80;   // 40 blocs × 2 tiles
+        static constexpr int MAP_WIDTH_TILES = 100;   // 50 blocs × 2 tiles
         static constexpr int MAP_HEIGHT_TILES = 36;  // 18 blocs × 2 tiles
         // Caméra
         Camera camera;
