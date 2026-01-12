@@ -30,7 +30,7 @@ class GamePlayState: public AbstractState
         StateManager* stateManager{nullptr};  // Référence au StateManager
         int currentLevel{1};
         ALLEGRO_BITMAP *tileset{nullptr};
-        // Constantes de map (MAP_WIDTH_TILES et MAP_HEIGHT_TILES viennent de level1Data.h)
+        // Constantes de map (MAP_WIDTH_TILES et MAP_HEIGHT_TILES viennent de levelXData.h)
         static constexpr int TILE_SIZE = 16;
         // Caméra
         Camera camera;
