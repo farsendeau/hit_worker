@@ -3,7 +3,7 @@
 
 #include <string>
 #include "../core/AbstractState.hpp"
-#include "../level/level1Data.h"
+#include "../level/LevelManager.hpp"
 #include "../level/Camera.hpp"
 #include "../level/Level.hpp"
 #include "../entity/Player.hpp"

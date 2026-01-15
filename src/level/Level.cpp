@@ -1,5 +1,5 @@
 #include "level/Level.hpp"
-#include "level/level1Data.h"
+#include "level/LevelManager.hpp"
 
 Level::Level()
 {
@@ -11,18 +11,15 @@ Level::~Level()
 
 bool Level::isSolidAt(int tileX, int tileY) const
 {
-    // Utilise les fonctions de level1Data.h
-    return ::isSolidAt(tileX, tileY);  // :: pour utiliser la fonction globale
+    return LevelManager::instance().getCurrentLevel().isSolidAt(tileX, tileY);
 }
 
 bool Level::isLadderAt(int tileX, int tileY) const
 {
-    // Utilise les fonctions de level1Data.h
-    return ::isLadderAt(tileX, tileY);  // :: pour utiliser la fonction globale
+    return LevelManager::instance().getCurrentLevel().isLadderAt(tileX, tileY);
 }
 
 bool Level::isKillAt(int tileX, int tileY) const
 {
-    // Utilise les fonctions de level1Data.h
-    return ::isKillAt(tileX, tileY);  // :: pour utiliser la fonction globale
+    return LevelManager::instance().getCurrentLevel().isKillAt(tileX, tileY);
 }
