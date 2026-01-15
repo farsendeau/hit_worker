@@ -16,11 +16,14 @@ GamePlayState::GamePlayState(StateManager* sm)
     std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
     setTileset(filename);
 
+    // Obtenir référence au niveau actif
+    const auto& levelData = LevelManager::instance().getCurrentLevel();
+
     // Trouver la zone de départ du joueur
-    currentZoneId = findCameraZone(player.getCenterX(), player.getCenterY());
+    currentZoneId = levelData.findCameraZone(player.getCenterX(), player.getCenterY());
 
     // Positionner la caméra sur la zone de départ
-    const CameraZone& startZone = cameraZones[currentZoneId];
+    const CameraZone& startZone = levelData.cameraZones[currentZoneId];
     camera.setY(startZone.y);
 
     // Initialiser le premier respawn point si la zone de départ est une zone de respawn
@@ -128,7 +131,7 @@ void GamePlayState::update(const InputState &input)
         camera.setX(player.getCenterX() - VIRTUAL_WIDTH / 2.0f);
 
         // Limiter X aux bords de la zone courante
-        const CameraZone& zone = cameraZones[currentZoneId];
+        const CameraZone& zone = LevelManager::instance().getCurrentLevel().cameraZones[currentZoneId];
         if (camera.getX() < zone.x) {
             camera.setX(zone.x);
         }
@@ -150,7 +153,8 @@ void GamePlayState::update(const InputState &input)
     }
 
     // 5. Mode normal: caméra suit le joueur horizontalement
-    const CameraZone& currentZone = cameraZones[currentZoneId];
+    const auto& lvl = LevelManager::instance().getCurrentLevel();
+    const CameraZone& currentZone = lvl.cameraZones[currentZoneId];
 
     // Suivre le joueur horizontalement
     camera.follow(player);
@@ -160,7 +164,7 @@ void GamePlayState::update(const InputState &input)
     float maxCameraX;
     if (currentZone.next_zone_right >= 0) {
         // Zone à droite existe, scrolling libre jusqu'au bout du niveau
-        maxCameraX = (MAP_WIDTH_TILES * TILE_SIZE) - VIRTUAL_WIDTH;
+        maxCameraX = (lvl.mapWidthTiles * TILE_SIZE) - VIRTUAL_WIDTH;
     } else {
         // Pas de zone à droite, bloquer à cette zone
         maxCameraX = currentZone.x + currentZone.width - VIRTUAL_WIDTH;
@@ -218,6 +222,8 @@ void GamePlayState::render()
         return;  // Ne rien dessiner si le tileset n'est pas chargé
     }
 
+    const auto& levelData = LevelManager::instance().getCurrentLevel();
+
     // Calculer la zone visible (culling)
     int startX = static_cast<int>(camera.getX()) / TILE_SIZE;
     int startY = static_cast<int>(camera.getY()) / TILE_SIZE;
@@ -227,13 +233,13 @@ void GamePlayState::render()
     // Limiter aux bords de la map
     if (startX < 0) startX = 0;
     if (startY < 0) startY = 0;
-    if (endX > MAP_WIDTH_TILES) endX = MAP_WIDTH_TILES;
-    if (endY > MAP_HEIGHT_TILES) endY = MAP_HEIGHT_TILES;
+    if (endX > levelData.mapWidthTiles) endX = levelData.mapWidthTiles;
+    if (endY > levelData.mapHeightTiles) endY = levelData.mapHeightTiles;
 
     // Dessiner chaque tile visible
     for (int y = startY; y < endY; y++) {
         for (int x = startX; x < endX; x++) {
-            uint8_t tileID = getVisualTileAt(x, y);
+            uint8_t tileID = levelData.getVisualTileAt(x, y);
 
             // Position à l'écran (en tenant compte de la caméra)
             int screenX = x * TILE_SIZE - static_cast<int>(camera.getX());
@@ -320,7 +326,8 @@ void GamePlayState::setTileset(std::string &filename)
  */
 void GamePlayState::detectZoneChange()
 {
-    const CameraZone& currentZone = cameraZones[currentZoneId];
+    const auto& levelData = LevelManager::instance().getCurrentLevel();
+    const CameraZone& currentZone = levelData.cameraZones[currentZoneId];
     float playerX = player.getCenterX();
     float playerY = player.getCenterY();
 
@@ -355,7 +362,7 @@ void GamePlayState::detectZoneChange()
     }
 
     // PRIORITÉ 2: Trouver la nouvelle zone du joueur
-    int actualZoneId = findCameraZone(playerX, playerY);
+    int actualZoneId = levelData.findCameraZone(playerX, playerY);
 
     #ifdef DEBUG
     if (actualZoneId != currentZoneId && actualZoneId >= 0) {
@@ -371,7 +378,7 @@ void GamePlayState::detectZoneChange()
 
     // PRIORITÉ 3: Vérifier si findCameraZone() a retourné la zone 0 par défaut
     // Si oui, c'est que le joueur est hors de toutes les zones définies
-    const CameraZone& potentialNewZone = cameraZones[actualZoneId];
+    const CameraZone& potentialNewZone = levelData.cameraZones[actualZoneId];
     bool playerReallyInNewZone = (playerX >= potentialNewZone.x &&
                                    playerX < potentialNewZone.x + potentialNewZone.width &&
                                    playerY >= potentialNewZone.y &&
@@ -388,7 +395,7 @@ void GamePlayState::detectZoneChange()
         return;
     }
 
-    const CameraZone& newZone = cameraZones[actualZoneId];
+    const CameraZone& newZone = levelData.cameraZones[actualZoneId];
 
     // Vérifier si la nouvelle zone est une zone de respawn
     // Ne l'activer que si son ID est supérieur à la dernière zone de respawn activée
@@ -452,7 +459,7 @@ void GamePlayState::updateVerticalTransition()
 {
     if (!isTransitioning) return;
 
-    const CameraZone& targetZone = cameraZones[targetZoneId];
+    const CameraZone& targetZone = LevelManager::instance().getCurrentLevel().cameraZones[targetZoneId];
     float targetCameraY = targetZone.y;
     float currentCameraY = camera.getY();
 
@@ -495,7 +502,7 @@ void GamePlayState::finishTransition()
     // après le scroll (en haut pour scroll DOWN, en bas pour scroll UP)
 
     // Vérifier que le joueur est bien dans la zone cible
-    const CameraZone& targetZone = cameraZones[targetZoneId];
+    const CameraZone& targetZone = LevelManager::instance().getCurrentLevel().cameraZones[targetZoneId];
     float playerCenterY = player.getCenterY();
 
     // Si le joueur est hors de la zone cible, le repositionner au bord
@@ -522,7 +529,7 @@ void GamePlayState::finishTransition()
  */
 void GamePlayState::applyZoneBoundaries()
 {
-    const CameraZone& zone = cameraZones[currentZoneId];
+    const CameraZone& zone = LevelManager::instance().getCurrentLevel().cameraZones[currentZoneId];
 
     // Limites horizontales - bloquer seulement s'il n'y a pas de zone adjacente
     float zoneLeft = zone.x;
@@ -570,7 +577,7 @@ void GamePlayState::resetToRespawn(int zoneId, int lives)
     DEBUG_LOG("Resetting to respawn zone %d with %d lives\n", zoneId, lives);
 
     // Récupérer la zone de respawn
-    const CameraZone& zone = cameraZones[zoneId];
+    const CameraZone& zone = LevelManager::instance().getCurrentLevel().cameraZones[zoneId];
 
     // Calculer position de respawn (centre de la zone)
     float respawnX = zone.x + zone.width / 2.0f - player.getWidth() / 2.0f;

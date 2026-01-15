@@ -1,14 +1,15 @@
 // ========================================
 // Fichier généré automatiquement par hitwoker_tiled
 // Source: /mnt/e/Documents/hit_woker_c/map_test.tmx
-// NE PAS MODIFIER À LA MAIN
+// Format: LevelData (dynamic-level-loading)
 // ========================================
 
-#ifndef LEVEL_DATA_H
-#define LEVEL_DATA_H
+#ifndef LEVEL1_DATA_H
+#define LEVEL1_DATA_H
 
-#include <cstdint>
+#include "LevelData.hpp"
 
+namespace Level1 {
 
 // ========================================
 // DIMENSIONS DE LA MAP
@@ -40,7 +41,7 @@ const uint8_t dataBlockVisual[18][4] = {
     {2, 0, 2, 0},  // Bloc 14 [2][0][2][0]
     {3, 0, 3, 3},  // Bloc 15 [3][0][3][3]
     {0, 1, 0, 1},  // Bloc 16 [0][1][0][1]
-    {1, 0, 1, 0}  // Bloc 17 [1][0][1][0]
+    {1, 0, 1, 0}   // Bloc 17 [1][0][1][0]
 };
 
 // ========================================
@@ -66,7 +67,7 @@ const uint8_t dataMapVisual[900] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // Ligne 15
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // Ligne 16
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 16, 17, 0, 0, 0, 0, 0, 0, 7, 7, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // Ligne 17
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // Ligne 18
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // Ligne 18
 };
 
 // ========================================
@@ -112,155 +113,52 @@ constexpr bool isKillLookup[MAX_TILE_ID + 1] = {
 };
 
 // ========================================
-// STATISTIQUES
-// ========================================
-// Sans compression: 3600 tiles × 3 couches × 8 bits = 86400 bits (10800 bytes)
-// Avec compression:
-//   - Visual (blocs 2×2): 7776 bits
-//   - Solid (tiles): 28800 bits
-//   - Action (tiles): 28800 bits
-//   - TOTAL: 65376 bits (8172 bytes)
-// ÉCONOMIE: 24.3333%
-
-// ========================================
-// FONCTIONS D'UTILISATION
-// ========================================
-
-// Obtenir la tile VISUELLE à afficher (décompression bloc 2×2)
-inline uint8_t getVisualTileAt(int x, int y) {
-    int blockX = x / 2;
-    int blockY = y / 2;
-    int blockIndex = blockY * 50 + blockX;
-
-    uint8_t blockID = dataMapVisual[blockIndex];
-
-    int tileInBlockX = x % 2;
-    int tileInBlockY = y % 2;
-    int tileIndex = tileInBlockY * 2 + tileInBlockX;
-
-    return dataBlockVisual[blockID][tileIndex];
-}
-
-// Vérifier si une tile ID est SOLIDE (O(1) avec lookup table)
-inline bool isSolidTile(uint8_t tileID) {
-    if (tileID > MAX_TILE_ID) return false;
-    return isSolidLookup[tileID];
-}
-
-// Vérifier si une tile ID est une ÉCHELLE (O(1) avec lookup table)
-inline bool isLadderTile(uint8_t tileID) {
-    if (tileID > MAX_TILE_ID) return false;
-    return isLadderLookup[tileID];
-}
-
-// Vérifier si une tile ID TUE le joueur (O(1) avec lookup table)
-inline bool isKillTile(uint8_t tileID) {
-    if (tileID > MAX_TILE_ID) return false;
-    return isKillLookup[tileID];
-}
-
-// Vérifier collision à une position (x, y)
-inline bool isSolidAt(int x, int y) {
-    uint8_t tileID = getVisualTileAt(x, y);
-    return isSolidTile(tileID);
-}
-
-// Vérifier échelle à une position (x, y)
-inline bool isLadderAt(int x, int y) {
-    uint8_t tileID = getVisualTileAt(x, y);
-    return isLadderTile(tileID);
-}
-
-// Vérifier danger à une position (x, y)
-inline bool isKillAt(int x, int y) {
-    uint8_t tileID = getVisualTileAt(x, y);
-    return isKillTile(tileID);
-}
-
-
-/* ========================================
- * EXEMPLES D'UTILISATION (COMMENTÉS)
- * Décommentez et adaptez selon vos besoins
- * ========================================
-
-// Exemple 1: Gestion du joueur avec collisions et dangers
-void updatePlayer(Player& player) {
-    int tileX = player.x / TILE_SIZE;
-    int tileY = player.y / TILE_SIZE;
-
-    // Vérifier les dangers en premier
-    if (isKillAt(tileX, tileY)) {
-        player.die();
-        return;
-    }
-
-    // Puis les collisions
-    if (isSolidAt(tileX, tileY)) {
-        player.stopMovement();
-    }
-}
-
-// Exemple 2: Rendu de la carte avec culling optimisé
-void renderMap(int cameraX, int cameraY) {
-    // Calculer la zone visible (culling)
-    int startX = cameraX / TILE_SIZE;
-    int startY = cameraY / TILE_SIZE;
-    int endX = startX + (SCREEN_WIDTH / TILE_SIZE) + 1;
-    int endY = startY + (SCREEN_HEIGHT / TILE_SIZE) + 1;
-
-    // Limiter aux bords de la map
-    if (startX < 0) startX = 0;
-    if (startY < 0) startY = 0;
-    if (endX > 100) endX = 100;
-    if (endY > 36) endY = 36;
-
-    for (int y = startY; y < endY; y++) {
-        for (int x = startX; x < endX; x++) {
-            uint8_t tileID = getVisualTileAt(x, y);
-            if (tileID > 0) {  // Ne pas dessiner les tiles vides
-                drawTile(tileID, x * TILE_SIZE - cameraX, y * TILE_SIZE - cameraY);
-            }
-        }
-    }
-}
-
- * ======================================== */
-
-// ========================================
 // CAMERA ZONES - Zones de scrolling
 // ========================================
 // Nombre de zones: 8
 
-struct CameraZone {
-    int zone_id;
-    float x, y, width, height;
-    int next_zone_left, next_zone_right, next_zone_up, next_zone_down;
-    bool zone_respawn;
-};
-
 constexpr int NUM_CAMERA_ZONES = 8;
 
 const CameraZone cameraZones[NUM_CAMERA_ZONES] = {
-    {0, 0.0f, 192.0f, 320.0f, 192.0f, -1, 1, -1, -1, true},  // Zone 0 [RESPAWN]
+    {0, 0.0f, 192.0f, 320.0f, 192.0f, -1, 1, -1, -1, true},   // Zone 0 [RESPAWN]
     {1, 320.0f, 192.0f, 320.0f, 192.0f, 1, 1, -1, -1, true},  // Zone 1 [RESPAWN]
-    {2, 640.0f, 192.0f, 320.0f, 192.0f, 1, -1, -1, 4, false},  // Zone 2
+    {2, 640.0f, 192.0f, 320.0f, 192.0f, 1, -1, -1, 4, false}, // Zone 2
     {3, 640.0f, 384.0f, 320.0f, 192.0f, -1, 4, 2, -1, true},  // Zone 3 [RESPAWN]
-    {4, 960.0f, 384.0f, 320.0f, 192.0f, 3, -1, 5, -1, false},  // Zone 4
-    {5, 960.0f, 192.0f, 320.0f, 192.0f, -1, -1, 6, 4, false},  // Zone 5
-    {6, 960.0f, 0.0f, 320.0f, 192.0f, -1, 7, -1, 5, true},  // Zone 6 [RESPAWN]
+    {4, 960.0f, 384.0f, 320.0f, 192.0f, 3, -1, 5, -1, false}, // Zone 4
+    {5, 960.0f, 192.0f, 320.0f, 192.0f, -1, -1, 6, 4, false}, // Zone 5
+    {6, 960.0f, 0.0f, 320.0f, 192.0f, -1, 7, -1, 5, true},    // Zone 6 [RESPAWN]
     {7, 1280.0f, 0.0f, 320.0f, 192.0f, 6, -1, -1, -1, false}  // Zone 7
 };
 
-// Helper pour trouver la zone du joueur
-inline int findCameraZone(float playerX, float playerY) {
-    for (int i = 0; i < NUM_CAMERA_ZONES; i++) {
-        const auto& z = cameraZones[i];
-        if (playerX >= z.x && playerX < z.x + z.width &&
-            playerY >= z.y && playerY < z.y + z.height) {
-            return z.zone_id;
-        }
-    }
-    return 0; // Zone par défaut
-}
+// ========================================
+// LEVELDATA INSTANCE
+// ========================================
 
-#endif // LEVEL_DATA_H
+inline const LevelData data {
+    .mapWidthTiles = MAP_WIDTH_TILES,
+    .mapHeightTiles = MAP_HEIGHT_TILES,
+    .blocksWide = MAP_WIDTH_TILES / 2,
+    .blocksHigh = MAP_HEIGHT_TILES / 2,
+    .dataBlockVisual = dataBlockVisual,
+    .dataMapVisual = dataMapVisual,
+    .numBlocks = 18,
+    .solidTiles = solidTiles,
+    .numSolidTiles = 2,
+    .ladderTiles = ladderTiles,
+    .numLadderTiles = 1,
+    .killTiles = killTiles,
+    .numKillTiles = 1,
+    .isSolidLookup = isSolidLookup,
+    .isLadderLookup = isLadderLookup,
+    .isKillLookup = isKillLookup,
+    .maxTileId = MAX_TILE_ID,
+    .cameraZones = cameraZones,
+    .numCameraZones = NUM_CAMERA_ZONES,
+    .levelId = 1,
+    .tilesetPath = "asset/level/tileset/1.jpg",
+    .nextLevelId = -1  // Pas de niveau suivant pour l'instant
+};
+
+} // namespace Level1
+
+#endif // LEVEL1_DATA_H
