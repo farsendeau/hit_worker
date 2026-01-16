@@ -5,7 +5,7 @@
 
 #include "level/LevelManager.hpp"
 #include "level/level1Data.h"
-// #include "level/level2Data.h"  // Décommenter quand disponible
+#include "level/level2Data.h"
 
 LevelManager& LevelManager::instance() {
     static LevelManager instance;
@@ -21,11 +21,8 @@ LevelManager::LevelManager() {
 void LevelManager::registerAllLevels() {
     // Enregistrer tous les niveaux compilés
     levels_[0] = &Level1::data;
-    totalLevels_ = 1;
-
-    // Ajouter d'autres niveaux ici:
-    // levels_[1] = &Level2::data;
-    // totalLevels_ = 2;
+    levels_[1] = &Level2::data;
+    totalLevels_ = 2;
 }
 
 const LevelData& LevelManager::getCurrentLevel() const {

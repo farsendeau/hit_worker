@@ -192,15 +192,18 @@ void Game::handleInput()
     bool currentAttackKey = al_key_down(&keyState, ALLEGRO_KEY_H);
     bool currentWeaponSwitchKey = al_key_down(&keyState, ALLEGRO_KEY_F);
     bool currentRefillAmmoKey = al_key_down(&keyState, ALLEGRO_KEY_O);
+    bool currentNextLevelKey = al_key_down(&keyState, ALLEGRO_KEY_N);
 
     inputState.attack = currentAttackKey && !prevAttackKey;  // Transition LOW→HIGH uniquement
     inputState.weaponSwitch = currentWeaponSwitchKey && !prevWeaponSwitchKey;
     inputState.debugRefillAmmo = currentRefillAmmoKey && !prevRefillAmmoKey;
+    inputState.debugNextLevel = currentNextLevelKey && !prevNextLevelKey;
 
     // Sauvegarde pour la prochaine frame
     prevAttackKey = currentAttackKey;
     prevWeaponSwitchKey = currentWeaponSwitchKey;
     prevRefillAmmoKey = currentRefillAmmoKey;
+    prevNextLevelKey = currentNextLevelKey;
 
     // ici mettre en place une manete
 }

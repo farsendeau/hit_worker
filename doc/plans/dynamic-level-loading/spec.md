@@ -3,7 +3,7 @@
 **Feature:** Chargement dynamique de niveaux
 **Version:** 1.0
 **Date:** 2026-01-15
-**Status:** Implementation
+**Status:** Done
 
 ---
 
@@ -387,11 +387,11 @@ hitwoker_tiled maps/level2.tmx --level-id=2 --next-level=3 --tileset="asset/leve
 
 ## 10. Definition of Done
 
-- [ ] LevelData struct definie et documentee
-- [ ] LevelManager implemente et teste
-- [ ] hitwoker_tiled genere le nouveau format
-- [ ] GamePlayState utilise LevelManager
-- [ ] Transition boss->niveau suivant fonctionne
-- [ ] Au moins 2 niveaux testables
-- [ ] Documentation /doc mise a jour
-- [ ] Pas de regression sur le gameplay existant
+- [x] LevelData struct definie et documentee
+- [x] LevelManager implemente et teste
+- [x] hitwoker_tiled genere le nouveau format
+- [x] GamePlayState utilise LevelManager
+- [x] Transition boss->niveau suivant fonctionne
+- [x] Au moins 2 niveaux testables
+- [x] Documentation /doc mise a jour
+- [x] Pas de regression sur le gameplay existant
