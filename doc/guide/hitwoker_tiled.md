@@ -2,8 +2,8 @@
 
 **Outil de génération de données de map pour Hit Worker**
 
-**Version:** 2.1 (avec correction GID)
-**Date:** 28 décembre 2024
+**Version:** 3.0 (format LevelData)
+**Date:** 16 janvier 2026
 
 ---
 
@@ -109,24 +109,55 @@ chmod +x hitwoker_tiled
 ### Syntaxe
 
 ```bash
-~/hit_woker_tiled/hitwoker_tiled <fichier.tmx>
+~/hit_woker_tiled/hitwoker_tiled <fichier.tmx> [options]
 ```
+
+### Options (v3.0+)
+
+| Option | Description | Valeur par defaut |
+|--------|-------------|-------------------|
+| `--level-id=N` | ID du niveau (namespace LevelN, header guard) | 1 |
+| `--next-level=N` | ID du niveau suivant (-1 = dernier niveau) | -1 |
+| `--tileset=PATH` | Chemin vers l'image du tileset | "asset/level/tileset/1.jpg" |
 
 ### Exemple simple
 
 ```bash
-# Générer les données pour map_test.tmx
-~/hit_woker_tiled/hitwoker_tiled /path/to/map_test.tmx
+# Generer les donnees pour level1
+~/hit_woker_tiled/hitwoker_tiled /path/to/map_test.tmx \
+    --level-id=1 \
+    --next-level=2 \
+    --tileset="asset/level/tileset/1.jpg" \
+    > include/level/level1Data.h
 
-# Rediriger vers un fichier header
-~/hit_woker_tiled/hitwoker_tiled /path/to/map_test.tmx > include/level/MapData.h
+# Generer level2 qui pointe vers level3
+~/hit_woker_tiled/hitwoker_tiled /path/to/map_level2.tmx \
+    --level-id=2 \
+    --next-level=3 \
+    --tileset="asset/level/tileset/2.jpg" \
+    > include/level/level2Data.h
 ```
 
-### Sortie
+### Sortie (format v3.0)
 
-Le script affiche sur `stdout` :
-- Informations de diagnostic (sur `stderr`)
-- Code C++ complet (sur `stdout`)
+Le fichier genere contient :
+- Namespace `LevelN` avec toutes les donnees
+- Instance `inline const LevelData data` avec designated initializers
+- Compatible avec le systeme dynamic-level-loading
+
+```cpp
+#ifndef LEVEL1_DATA_H
+#define LEVEL1_DATA_H
+
+#include "LevelData.hpp"
+
+namespace Level1 {
+    // Donnees brutes...
+    inline const LevelData data { ... };
+}
+
+#endif
+```
 
 ---
 
@@ -575,5 +606,5 @@ ls -lh include/level/*.h
 ---
 
 **Auteur :** Hit Worker Team
-**Dernière mise à jour :** 2024-12-28
-**Version :** 2.1
+**Derniere mise a jour :** 2026-01-16
+**Version :** 3.0
