@@ -101,7 +101,20 @@ void GamePlayState::update(const InputState &input)
             return; // Pause: ne pas exécuter cette frame
         }
     }
+
+    // ===== DEBUG: Touche N pour simuler mort du boss =====
+    if (input.debugNextLevel && !debugNextLevelPressed) {
+        DEBUG_LOG("DEBUG: Simulating boss defeat (N key pressed)\n");
+        onBossDefeated();
+    }
+    debugNextLevelPressed = input.debugNextLevel;
     #endif
+
+    // Gerer la transition de niveau en priorite
+    if (isLevelTransitioning_) {
+        updateLevelTransition();
+        return;  // Pas d'autre update pendant la transition
+    }
 
     // 1. Update joueur (physique, input, collisions)
     if (!isTransitioning) {
@@ -291,6 +304,21 @@ void GamePlayState::render()
             al_draw_text(g_debugFont, textColor, 5, 15, 0, "Press RIGHT ARROW to advance");
         }
     #endif
+
+    // Effet de fade pendant la transition de niveau
+    if (isLevelTransitioning_) {
+        float progress = 1.0f - (static_cast<float>(levelTransitionTimer_) / static_cast<float>(LEVEL_TRANSITION_DURATION));
+        float alpha;
+        if (progress < 0.5f) {
+            // Fade out (alpha: 0 -> 1)
+            alpha = progress * 2.0f;
+        } else {
+            // Fade in (alpha: 1 -> 0)
+            alpha = (1.0f - progress) * 2.0f;
+        }
+        al_draw_filled_rectangle(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT,
+                                 al_map_rgba_f(0, 0, 0, alpha));
+    }
 
     // Dessiner le HUD (overlay, toujours en dernier)
     hud.render(player);
@@ -1127,5 +1155,90 @@ void GamePlayState::applyItemEffect(ItemType type)
             DEBUG_LOG("Item: GRENADE_AMMO, Ammo: %d -> %d\n", oldAmmo, newAmmo);
             break;
         }
+    }
+}
+
+// ============================================================
+// Level Transition (Phase 5 - Dynamic Level Loading)
+// ============================================================
+
+/**
+ * Appele quand le boss du niveau est vaincu
+ * Demarre la transition vers le niveau suivant
+ */
+void GamePlayState::onBossDefeated()
+{
+    if (!LevelManager::instance().hasNextLevel()) {
+        // Dernier niveau: victoire!
+        DEBUG_LOG("All levels completed! Victory!\n");
+        // TODO: stateManager->push(new VictoryState(...));
+        return;
+    }
+
+    // Demarrer la transition vers le niveau suivant
+    DEBUG_LOG("Boss defeated! Starting level transition...\n");
+    isLevelTransitioning_ = true;
+    levelTransitionTimer_ = LEVEL_TRANSITION_DURATION;
+}
+
+/**
+ * Gere la transition entre niveaux
+ * - Premiere moitie: fade out
+ * - Mi-transition: charger le nouveau niveau
+ * - Deuxieme moitie: fade in
+ */
+void GamePlayState::updateLevelTransition()
+{
+    if (!isLevelTransitioning_) return;
+
+    levelTransitionTimer_--;
+
+    // Mi-transition: charger le nouveau niveau
+    if (levelTransitionTimer_ == LEVEL_TRANSITION_DURATION / 2) {
+        LevelManager::instance().loadNextLevel();
+
+        // Recharger le tileset
+        const auto& newLevel = LevelManager::instance().getCurrentLevel();
+        std::string filename{newLevel.tilesetPath};
+        if (tileset) {
+            al_destroy_bitmap(tileset);
+            tileset = nullptr;
+        }
+        setTileset(filename);
+
+        // Mettre a jour l'ID de niveau pour le HUD
+        currentLevel = newLevel.levelId;
+
+        // Reset player position (centre de la premiere zone)
+        const CameraZone& firstZone = newLevel.cameraZones[0];
+        float spawnX = firstZone.x + firstZone.width / 2.0f - player.getWidth() / 2.0f;
+        float spawnY = firstZone.y + firstZone.height / 2.0f - player.getHeight() / 2.0f;
+        player.setX(spawnX);
+        player.setY(spawnY);
+        player.setVelocityX(0);
+        player.setVelocityY(0);
+
+        // Reset camera
+        currentZoneId = 0;
+        lastRespawnZoneId = 0;
+        camera.setX(firstZone.x);
+        camera.setY(firstZone.y);
+
+        // Mettre a jour le respawn point
+        if (firstZone.zone_respawn) {
+            player.setRespawnPoint(spawnX, spawnY);
+        }
+
+        // Reset enemies et projectiles
+        resetEnemies();
+        resetProjectiles();
+
+        DEBUG_LOG("Level %d loaded\n", LevelManager::instance().getCurrentLevelId());
+    }
+
+    // Fin de transition
+    if (levelTransitionTimer_ <= 0) {
+        isLevelTransitioning_ = false;
+        DEBUG_LOG("Level transition complete\n");
     }
 }

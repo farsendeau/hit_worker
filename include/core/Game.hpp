@@ -37,6 +37,7 @@ class Game
         bool prevAttackKey{false};
         bool prevWeaponSwitchKey{false};
         bool prevRefillAmmoKey{false};
+        bool prevNextLevelKey{false};
 
     public:
         InputState inputState{};

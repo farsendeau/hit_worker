@@ -156,7 +156,7 @@ inline const LevelData data {
     .numCameraZones = NUM_CAMERA_ZONES,
     .levelId = 1,
     .tilesetPath = "asset/level/tileset/1.jpg",
-    .nextLevelId = -1  // Pas de niveau suivant pour l'instant
+    .nextLevelId = 2
 };
 
 } // namespace Level1

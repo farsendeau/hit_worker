@@ -1,889 +1,427 @@
-# Guide d'ajout d'un nouveau level (GamePlayState)
+# Guide d'ajout d'un nouveau niveau
 
-**Pour les nouveaux développeurs Hit Worker**
+**Pour les developpeurs Hit Worker**
 
-**Version:** 1.0
-**Date:** 30 décembre 2024
+**Version:** 2.0 (dynamic-level-loading)
+**Date:** 16 janvier 2026
 
 ---
 
-## Table des matières
+## Table des matieres
 
 1. [Vue d'ensemble](#vue-densemble)
-2. [Prérequis](#prérequis)
-3. [Étapes pour ajouter un niveau](#étapes-pour-ajouter-un-niveau)
-4. [Explication de l'architecture](#explication-de-larchitecture)
-5. [Exemples pratiques](#exemples-pratiques)
-6. [Dépannage](#dépannage)
-7. [Checklist finale](#checklist-finale)
+2. [Prerequis](#prerequis)
+3. [Etapes pour ajouter un niveau](#etapes-pour-ajouter-un-niveau)
+4. [Architecture du systeme](#architecture-du-systeme)
+5. [Depannage](#depannage)
+6. [Checklist finale](#checklist-finale)
 
 ---
 
 ## Vue d'ensemble
 
-### Qu'est-ce qu'un level dans Hit Worker?
+### Qu'est-ce qu'un niveau dans Hit Worker?
 
-Un level (niveau) dans Hit Worker est composé de:
+Un niveau est compose de:
 
-1. **Fichier de données de map** (`levelXData.h`) - Contient les tiles, collisions et zones mortelles
-2. **Image du tileset** (`X.jpg`) - L'image contenant les sprites des tiles
-3. **GamePlayState** - Le state qui gère le rendu et la logique du niveau
+1. **Fichier de donnees** (`levelXData.h`) - Genere par hitwoker_tiled, contient tiles, collisions, camera zones
+2. **Image du tileset** (`X.jpg`) - Sprites des tiles (16x16 pixels)
+3. **LevelManager** - Singleton qui gere le chargement dynamique des niveaux
 
-### Architecture simplifiée
+### Architecture simplifiee
 
 ```
-Level 1
-├── include/level/level1Data.h    ← Données générées (tiles, collisions)
-├── asset/level/tileset/1.jpg     ← Image du tileset
-└── GamePlayState.cpp             ← Utilise ces données pour le rendu
+Niveau 2
+├── include/level/level2Data.h      <- Donnees generees (namespace Level2)
+├── asset/level/tileset/2.jpg       <- Image du tileset
+└── src/level/LevelManager.cpp      <- Enregistrement du niveau
 ```
+
+### Systeme dynamic-level-loading
+
+Le jeu utilise un systeme de chargement dynamique:
+
+- Tous les niveaux sont compiles dans l'executable
+- `LevelManager` gere le pointeur vers le niveau actif
+- Transition automatique vers le niveau suivant (fade out/in)
+- Configuration via `nextLevelId` dans chaque niveau
 
 ---
 
-## Prérequis
+## Prerequis
 
-Avant de commencer, assurez-vous d'avoir:
+Avant de commencer:
 
-- [x] **Tiled Map Editor** installé (https://www.mapeditor.org/)
-- [x] **hitwoker_tiled** compilé (`~/hit_woker_tiled/hitwoker_tiled`)
-- [x] Connaissances de base en C++ et Allegro5
-- [x] Un éditeur d'images (GIMP, Photoshop, etc.) pour créer le tileset
+- [x] **Tiled Map Editor** installe (https://www.mapeditor.org/)
+- [x] **hitwoker_tiled** compile (`~/hit_woker_tiled/build/main`)
+- [x] Editeur d'images pour le tileset
 
-**Vérification rapide:**
+**Verification rapide:**
 
 ```bash
-# Vérifier que l'outil de génération existe
-ls ~/hit_woker_tiled/hitwoker_tiled
+# Verifier l'outil de generation
+ls ~/hit_woker_tiled/build/main
 
-# Vérifier la structure du projet
-ls /home/karigane/hit_worker/include/level/
+# Verifier les niveaux existants
+ls /home/karigane/hit_worker/include/level/level*Data.h
+
+# Verifier les tilesets
 ls /home/karigane/hit_worker/asset/level/tileset/
 ```
 
 ---
 
-## Étapes pour ajouter un niveau
+## Etapes pour ajouter un niveau
 
-### Étape 1: Créer l'image du tileset
+### Etape 1: Creer l'image du tileset
 
-Le tileset est une image horizontale contenant toutes les tiles de votre niveau.
-
-**Spécifications:**
+**Specifications:**
 - **Format:** JPG (ou PNG)
 - **Hauteur:** 16 pixels
-- **Largeur:** 16 pixels × nombre de tiles
-- **Organisation:** Tiles placées côte à côte horizontalement
+- **Largeur:** 16 pixels x nombre de tiles
+- **Organisation:** Tiles placees cote a cote horizontalement
 
 **Convention des IDs:**
-- Tile 0 (position 0): Vide/Air (transparent ou fond)
-- Tiles 1-3 (positions 16-48): Blocs solides (sol, murs, plateformes)
-- Tile 4+ (position 64+): Tiles mortelles (piques, lave, etc.)
+- Tile 0: Vide/Air
+- Tiles 1-3: Blocs solides
+- Tile 4+: Tiles speciales (echelles, mortelles)
 
-**Exemple de tileset 5 tiles (80px de large):**
-
-```
-┌────┬────┬────┬────┬────┐
-│  0 │  1 │  2 │  3 │  4 │
-│Vide│Sol │Mur │Plat│Pic │
-└────┴────┴────┴────┴────┘
-  0   16   32   48   64  (positions X)
-```
-
-**Créer le tileset pour le niveau 2:**
-
-1. Créez une image de 80×16 pixels (pour 5 tiles par exemple)
-2. Dessinez vos tiles de 16×16 pixels
-3. Sauvegardez en JPG: `asset/level/tileset/2.jpg`
+**Exemple:**
 
 ```bash
-# Créer le répertoire si nécessaire
-mkdir -p /home/karigane/hit_worker/asset/level/tileset/
+# Copier un tileset existant comme base
+cp asset/level/tileset/1.jpg asset/level/tileset/3.jpg
 
-# Copier votre tileset
-cp mon_tileset.jpg /home/karigane/hit_worker/asset/level/tileset/2.jpg
+# Ou creer le votre avec GIMP/Photoshop
 ```
 
 ---
 
-### Étape 2: Créer la map dans Tiled
+### Etape 2: Creer la map dans Tiled
 
 **2.1 - Nouvelle map**
 
-Lancez Tiled et créez une nouvelle map:
-
 - **Orientation:** Orthogonal
-- **Tile layer format:** CSV
-- **Tile render order:** Right Down
-- **Largeur map:** 60 tiles (pour 3 écrans) ou 320 tiles (pour 16 écrans complets)
-- **Hauteur map:** 12 tiles
-- **Taille tile:** 16×16 pixels
+- **Largeur:** Multiple de 20 tiles (1 ecran = 20 tiles)
+- **Hauteur:** 36 tiles (standard)
+- **Taille tile:** 16x16 pixels
 
-**Important:** Les dimensions doivent être **paires** (multiples de 2) pour la compression 2×2.
+**Important:** Les dimensions doivent etre **paires** pour la compression 2x2.
 
-**2.2 - Créer le tileset dans Tiled**
+**2.2 - Couches requises**
 
-1. Menu: **Map → New Tileset**
-2. **Source:** Embedded tileset
-3. **Image source:** Sélectionnez votre `asset/level/tileset/2.jpg`
-4. **Tile width:** 16
-5. **Tile height:** 16
-6. Cliquez **OK**
+Creer ces couches dans cet ordre:
 
-**2.3 - Créer les 3 couches (layers)**
+| Couche | Type | Description |
+|--------|------|-------------|
+| `enemy` | Object | Spawn points des ennemis |
+| `camera_zone` | Object | Zones de camera (320x192 pixels chacune) |
+| `action` | Tile | Echelles et tiles mortelles |
+| `solid` | Tile | Blocs solides (collisions) |
+| `background` | Tile | Decor visuel |
 
-Créez exactement 3 couches dans cet ordre (crucial!):
+**2.3 - Proprietes des tiles**
 
-1. **Couche 1:** `background` (ou `Background`)
-   - Décor visuel
-   - Tiles non solides
-   - Exemple: nuages, décoration
+Dans le tileset, definir les proprietes custom:
+- `LADDER` pour les echelles
+- `KILL` pour les tiles mortelles
 
-2. **Couche 2:** `solid` (ou `Blocs solides`)
-   - Collisions
-   - Tiles sur lesquelles le joueur peut marcher/se cogner
-   - Exemple: sol, murs, plateformes
+**2.4 - Camera zones**
 
-3. **Couche 3:** `kill` (ou `Blocs qui tuent`)
-   - Zones mortelles
-   - Tue le joueur au contact
-   - Exemple: piques, lave, vide
+Chaque zone de camera doit avoir ces proprietes:
+- `zone_id`: ID unique (0, 1, 2...)
+- `next_zone_left`, `next_zone_right`, `next_zone_up`, `next_zone_down`: ID des zones adjacentes (-1 si aucune)
+- `zone_respawn`: `true` si c'est un point de respawn
 
-**2.4 - Dessiner le niveau**
-
-1. Sélectionnez la couche `background`
-2. Dessinez le décor avec les tiles voulues
-3. Sélectionnez la couche `solid`
-4. Placez les blocs de collision (sol, plateformes)
-5. Sélectionnez la couche `kill`
-6. Placez les dangers (piques, etc.)
-
-**Astuce:** Utilisez la gomme (E) pour effacer des tiles.
-
-**2.5 - Sauvegarder la map**
-
-Sauvegardez au format TMX:
+**2.5 - Sauvegarder**
 
 ```
-File → Save As → maps/level2.tmx
-```
-
-**Structure recommandée:**
-
-```bash
-mkdir -p /home/karigane/hit_worker/maps/
-# Sauvegarder dans: /home/karigane/hit_worker/maps/level2.tmx
+File -> Save As -> /path/to/map_levelX.tmx
 ```
 
 ---
 
-### Étape 3: Générer le fichier de données C++
-
-Utilisez l'outil `hitwoker_tiled` pour convertir votre map TMX en code C++.
+### Etape 3: Generer le fichier de donnees C++
 
 **Commande:**
 
 ```bash
-cd /home/karigane/hit_worker
-
-# Générer les données du niveau 2
-~/hit_woker_tiled/hitwoker_tiled maps/level2.tmx > include/level/level2Data.h
+~/hit_woker_tiled/build/main /path/to/map_level3.tmx \
+    --level-id=3 \
+    --next-level=4 \
+    --tileset="asset/level/tileset/3.jpg" \
+    > /home/karigane/hit_worker/include/level/level3Data.h
 ```
 
-**Vérification:**
+**Parametres:**
+
+| Parametre | Description | Exemple |
+|-----------|-------------|---------|
+| `--level-id=N` | ID du niveau (namespace LevelN) | `--level-id=3` |
+| `--next-level=N` | ID du niveau suivant (-1 = dernier) | `--next-level=4` |
+| `--tileset=PATH` | Chemin du tileset | `--tileset="asset/level/tileset/3.jpg"` |
+
+**Note:** Les messages de debug vont sur stderr, le code C++ sur stdout.
+
+**Verification:**
 
 ```bash
-# Vérifier que le fichier a été créé
-ls -lh include/level/level2Data.h
+# Verifier le fichier genere
+head -20 include/level/level3Data.h
 
-# Voir les premières lignes
-head -20 include/level/level2Data.h
-```
-
-Vous devriez voir:
-
-```cpp
-// ========================================
-// Fichier généré automatiquement par hitwoker_tiled
-// Source: /path/to/maps/level2.tmx
-// NE PAS MODIFIER À LA MAIN
-// ========================================
-
-#ifndef LEVEL_DATA_H
-#define LEVEL_DATA_H
-
-#include <cstdint>
-
-// ... (données de map)
+# Doit afficher:
+# #ifndef LEVEL3_DATA_H
+# #define LEVEL3_DATA_H
+# #include "LevelData.hpp"
+# namespace Level3 {
 ```
 
 ---
 
-### Étape 4: Intégrer le niveau dans GamePlayState
+### Etape 4: Enregistrer dans LevelManager
 
-**4.1 - Inclure le nouveau fichier de données**
+**Fichier:** `src/level/LevelManager.cpp`
 
-Éditez [include/state/GamePlayState.hpp](../include/state/GamePlayState.hpp):
-
-**Avant:**
+**4.1 - Ajouter l'include:**
 
 ```cpp
-#include "../level/level1Data.h"
-```
-
-**Après:**
-
-```cpp
-#include "../level/level1Data.h"
-#include "../level/level2Data.h"
-// Ajoutez autant de niveaux que nécessaire
-```
-
-**4.2 - Modifier le chargement du tileset**
-
-Le GamePlayState charge automatiquement le bon tileset selon `currentLevel`.
-
-Dans [src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):5, le code charge déjà dynamiquement:
-
-```cpp
-std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
-```
-
-Donc si `currentLevel = 2`, il chargera `asset/level/tileset/2.jpg` automatiquement.
-
-**4.3 - Adapter les fonctions de données (optionnel)**
-
-Si vous voulez gérer plusieurs niveaux, vous devrez créer un système pour changer les données de map en fonction du niveau actuel.
-
-**Option A: Fichiers séparés avec namespaces**
-
-Modifiez les fichiers générés pour ajouter des namespaces:
-
-**include/level/level1Data.h:**
-
-```cpp
-#ifndef LEVEL1_DATA_H
-#define LEVEL1_DATA_H
-
-namespace Level1 {
-    const uint8_t dataBlockVisual[12][4] = {...};
-    const uint8_t dataMapVisual[180] = {...};
-    // ... autres données
-
-    inline uint8_t getVisualTileAt(int x, int y) {
-        // ... (même code qu'avant)
-    }
-}
-
-#endif
-```
-
-**include/level/level2Data.h:**
-
-```cpp
-#ifndef LEVEL2_DATA_H
-#define LEVEL2_DATA_H
-
-namespace Level2 {
-    const uint8_t dataBlockVisual[20][4] = {...};
-    const uint8_t dataMapVisual[180] = {...};
-    // ... autres données
-
-    inline uint8_t getVisualTileAt(int x, int y) {
-        // ... (même code qu'avant)
-    }
-}
-
-#endif
-```
-
-**Option B: Pointeurs dynamiques (recommandé)**
-
-Modifiez [include/state/GamePlayState.hpp](../include/state/GamePlayState.hpp) pour stocker des pointeurs vers les données:
-
-```cpp
-class GamePlayState: public AbstractState
-{
-    private:
-        int currentLevel{1};
-        ALLEGRO_BITMAP *tileset{nullptr};
-
-        // Pointeurs vers les données du niveau actuel
-        const uint8_t (*currentDataBlockVisual)[4];
-        const uint8_t *currentDataMapVisual;
-        int currentMapWidth;
-        int currentMapHeight;
-
-        // ...
-};
-```
-
-Puis dans [src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp), initialisez selon le niveau:
-
-```cpp
+#include "level/LevelManager.hpp"
 #include "level/level1Data.h"
 #include "level/level2Data.h"
+#include "level/level3Data.h"  // <- AJOUTER
+```
 
-GamePlayState::GamePlayState()
-{
-    // Charger les données selon le niveau
-    switch(currentLevel) {
-        case 1:
-            currentDataBlockVisual = Level1::dataBlockVisual;
-            currentDataMapVisual = Level1::dataMapVisual;
-            currentMapWidth = 30;  // Pour une map 60 tiles de large
-            currentMapHeight = 6;  // Pour une map 12 tiles de haut
-            break;
-        case 2:
-            currentDataBlockVisual = Level2::dataBlockVisual;
-            currentDataMapVisual = Level2::dataMapVisual;
-            currentMapWidth = 30;
-            currentMapHeight = 6;
-            break;
-        // ... autres niveaux
-    }
+**4.2 - Enregistrer le niveau:**
 
-    // Charger le tileset
-    std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
-    setTileset(filename);
-
-    DEBUG_LOG("GamePlayState initialized\n");
-    DEBUG_LOG("Level: %d\n", currentLevel);
+```cpp
+void LevelManager::registerAllLevels() {
+    levels_[0] = &Level1::data;
+    levels_[1] = &Level2::data;
+    levels_[2] = &Level3::data;  // <- AJOUTER
+    totalLevels_ = 3;            // <- INCREMENTER
 }
 ```
 
-**Option C: Simplifiée (pour commencer)**
-
-Pour un premier test rapide, modifiez simplement le numéro du niveau par défaut:
-
-**include/state/GamePlayState.hpp:12**
-
-```cpp
-int currentLevel{2};  // Changer de 1 à 2
-```
-
-Et renommez `level2Data.h` en `level1Data.h` (écrasez l'ancien).
-
 ---
 
-### Étape 5: Compiler et tester
+### Etape 5: Mettre a jour le niveau precedent
 
-**Compilation:**
+Si vous ajoutez le niveau 3, assurez-vous que le niveau 2 pointe vers lui.
 
-```bash
-cd /home/karigane/hit_worker/build
-cmake ..
-make
-```
+**Fichier:** `include/level/level2Data.h`
 
-**Exécution:**
-
-```bash
-./hit_worker
-```
-
-**Tests à effectuer:**
-
-1. Le tileset s'affiche correctement
-2. Les collisions fonctionnent (tiles solides)
-3. Les zones mortelles tuent le joueur
-4. La caméra scrolle correctement
-5. Aucun crash ou erreur
-
-**Vérifier en mode debug:**
-
-```bash
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-make
-./hit_worker
-```
-
-En mode DEBUG, vous verrez:
-- La grille de débogage marron
-- Les logs dans la console
-- Les messages de chargement
-
----
-
-## Explication de l'architecture
-
-### 1. Fichier de données (`levelXData.h`)
-
-Ce fichier est généré automatiquement par `hitwoker_tiled` et contient:
-
-**a) dataBlockVisual[N][4]** - Blocs 2×2 uniques
-
-Stocke les patterns de tiles qui se répètent. Format: `[haut-gauche, haut-droite, bas-gauche, bas-droite]`
+Verifier que `nextLevelId` est correct:
 
 ```cpp
-const uint8_t dataBlockVisual[12][4] = {
-    {0, 0, 0, 0},  // Bloc 0 : Complètement vide
-    {1, 1, 1, 1},  // Bloc 1 : Sol complet (tile 1 partout)
-    {2, 3, 2, 0},  // Bloc 2 : Mix de tiles
+inline const LevelData data {
     // ...
+    .levelId = 2,
+    .tilesetPath = "asset/level/tileset/2.jpg",
+    .nextLevelId = 3  // <- Doit pointer vers le nouveau niveau
 };
 ```
 
-**b) dataMapVisual[M]** - Map de références aux blocs
+Si ce n'est pas le cas, regenerer level2Data.h avec `--next-level=3`.
 
-Pour une map 60×12 tiles → 30×6 blocs:
+---
+
+### Etape 6: Compiler et tester
+
+```bash
+cd /home/karigane/hit_worker
+cmake --build build
+
+# Lancer le jeu
+./bin/hit_worker
+```
+
+**Tests a effectuer:**
+
+1. Jouer jusqu'a la zone du boss du niveau precedent
+2. Appuyer sur **N** (debug) pour simuler la mort du boss
+3. Verifier le fade out -> chargement -> fade in
+4. Verifier que le nouveau niveau s'affiche correctement
+5. Tester les collisions et les camera zones
+
+---
+
+## Architecture du systeme
+
+### LevelData struct
+
+Chaque niveau est encapsule dans une struct `LevelData`:
 
 ```cpp
-const uint8_t dataMapVisual[180] = {
-    0, 0, 0, 0, ...,  // Ligne 1 (30 blocs)
-    0, 1, 2, 0, ...,  // Ligne 2
-    // ... (6 lignes au total)
+struct LevelData {
+    // Dimensions
+    int mapWidthTiles, mapHeightTiles;
+    int blocksWide, blocksHigh;
+
+    // Donnees visuelles (compression 2x2)
+    const uint8_t (*dataBlockVisual)[4];
+    const uint8_t* dataMapVisual;
+
+    // Tiles speciales
+    const uint8_t* solidTiles;
+    const uint8_t* ladderTiles;
+    const uint8_t* killTiles;
+
+    // Camera zones
+    const CameraZone* cameraZones;
+    int numCameraZones;
+
+    // Metadonnees
+    int levelId;
+    const char* tilesetPath;
+    int nextLevelId;  // -1 si dernier niveau
+
+    // Methodes utilitaires
+    uint8_t getVisualTileAt(int x, int y) const;
+    bool isSolidAt(int x, int y) const;
+    bool isLadderAt(int x, int y) const;
+    bool isKillAt(int x, int y) const;
 };
 ```
 
-**c) Lookup tables** - Tests de collision rapides (O(1))
+### LevelManager singleton
 
 ```cpp
-constexpr bool isSolidLookup[5] = {false, true, true, true, false};
-constexpr bool isKillLookup[5] = {false, false, false, false, true};
-```
-
-**d) Fonctions helper** - Utilisation facile
-
-```cpp
-inline uint8_t getVisualTileAt(int x, int y);  // Obtenir une tile
-inline bool isSolidAt(int x, int y);           // Tester collision
-inline bool isKillAt(int x, int y);            // Tester danger
-```
-
-### 2. GamePlayState
-
-Le GamePlayState gère:
-
-**a) Chargement** ([src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):3-10)
-
-```cpp
-GamePlayState::GamePlayState()
-{
-    // Charge le tileset selon le niveau actuel
-    std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
-    setTileset(filename);
-}
-```
-
-**b) Rendu** ([src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):37-92)
-
-Optimisé avec culling (ne dessine que la zone visible):
-
-```cpp
-void GamePlayState::render()
-{
-    // Calculer la zone visible
-    int startX = static_cast<int>(camera.getX()) / TILE_SIZE;
-    int endX = startX + (320 / TILE_SIZE) + 1;
-
-    // Dessiner uniquement les tiles visibles
-    for (int y = startY; y < endY; y++) {
-        for (int x = startX; x < endX; x++) {
-            uint8_t tileID = getVisualTileAt(x, y);
-            // Dessiner la tile...
-        }
-    }
-}
-```
-
-**c) Update** ([src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):16-35)
-
-Déplace la caméra avec les flèches:
-
-```cpp
-void GamePlayState::update()
-{
-    ALLEGRO_KEYBOARD_STATE keyState;
-    al_get_keyboard_state(&keyState);
-
-    if (al_key_down(&keyState, ALLEGRO_KEY_RIGHT)) {
-        camera.setX(camera.getX() + 2.0f);
-    }
-    // ...
-}
-```
-
-### 3. Système de compression 2D
-
-**Pourquoi 2×2?**
-
-Au lieu de stocker chaque tile individuellement (720 tiles × 3 couches = 2160 bytes), on:
-
-1. Découpe la map en blocs 2×2
-2. Détecte les blocs uniques (patterns répétés)
-3. Stocke uniquement les patterns uniques + références
-
-**Exemple:**
-
-Map 60×12 = 720 tiles
-→ Découpée en 30×6 = 180 blocs
-→ Détection: seulement 12 patterns uniques
-→ Stockage: 12×4 + 180 = **228 valeurs** au lieu de 720
-
-**Économie: ~22%** pour le niveau visuel.
-
-Pour plus de détails, voir [doc/guide_hitwoker_tiled.md](guide_hitwoker_tiled.md).
-
----
-
-## Exemples pratiques
-
-### Exemple 1: Niveau simple (3 écrans)
-
-**Objectif:** Créer un niveau 2 simple avec un parcours de 3 écrans.
-
-**1. Créer le tileset**
-
-Tileset 5 tiles (80×16px):
-
-```
-Tile 0: Ciel bleu (#87CEEB)
-Tile 1: Brique marron (#8B4513)
-Tile 2: Pierre grise (#696969)
-Tile 3: Herbe verte (#228B22)
-Tile 4: Piques rouges (#FF0000)
-```
-
-Sauvegarder: `asset/level/tileset/2.jpg`
-
-**2. Créer la map dans Tiled**
-
-- Map 60×12 tiles
-- 3 couches: background, solid, kill
-- Dessiner:
-  - Background: ciel
-  - Solid: sol avec briques et plateformes
-  - Kill: quelques piques
-
-**3. Générer et compiler**
-
-```bash
-~/hit_woker_tiled/hitwoker_tiled maps/level2.tmx > include/level/level2Data.h
-cd build && make && ./hit_worker
-```
-
----
-
-### Exemple 2: Niveau complet (16 écrans)
-
-**Objectif:** Grand niveau avec scrolling horizontal.
-
-**1. Créer une grande map**
-
-- Map 320×12 tiles (16 écrans × 20 tiles)
-- Suivre les mêmes étapes que l'exemple 1
-
-**2. Ajuster les constantes**
-
-Dans [include/state/GamePlayState.hpp](../include/state/GamePlayState.hpp):
-
-```cpp
-static constexpr int MAP_WIDTH_TILES = 320;  // Au lieu de 60
-```
-
-Dans [src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):32:
-
-```cpp
-float maxCameraX = (320 * TILE_SIZE) - 320;  // Nouvelle limite
-```
-
----
-
-### Exemple 3: Système multi-niveaux complet
-
-**Structure:**
-
-```
-include/level/
-├── level1Data.h
-├── level2Data.h
-└── level3Data.h
-
-asset/level/tileset/
-├── 1.jpg
-├── 2.jpg
-└── 3.jpg
-```
-
-**Code (GamePlayState.cpp):**
-
-```cpp
-void GamePlayState::loadLevel(int levelNumber)
-{
-    currentLevel = levelNumber;
-
-    // Charger le tileset
-    std::string filename{"asset/level/tileset/" + std::to_string(currentLevel) + ".jpg"};
-    setTileset(filename);
-
-    // Charger les données (selon l'option choisie)
-    switch(currentLevel) {
-        case 1:
-            // Charger level1Data
-            break;
-        case 2:
-            // Charger level2Data
-            break;
-        case 3:
-            // Charger level3Data
-            break;
-    }
-
-    // Réinitialiser la caméra
-    camera.setX(0);
-    camera.setY(0);
-}
-```
-
----
-
-## Dépannage
-
-### Problème 1: Le tileset ne s'affiche pas
-
-**Symptômes:** Écran noir ou tiles manquantes
-
-**Causes possibles:**
-
-1. Fichier JPG manquant
-2. Mauvais chemin
-3. Numéro de niveau incorrect
-
-**Solutions:**
-
-```bash
-# Vérifier que le fichier existe
-ls -l asset/level/tileset/2.jpg
-
-# Vérifier les permissions
-chmod 644 asset/level/tileset/2.jpg
-
-# Vérifier le chemin dans le code
-grep "asset/level/tileset" src/state/GamePlayState.cpp
-```
-
-**Debug:**
-
-Ajoutez des logs dans [src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):108:
-
-```cpp
-void GamePlayState::setTileset(std::string &filename)
-{
-    DEBUG_LOG("Tentative de chargement: %s\n", filename.c_str());
-    tileset = al_load_bitmap(filename.c_str());
-
-    if (!tileset) {
-        fprintf(stderr, "ERREUR: Impossible de charger le tileset '%s'\n", filename.c_str());
-    } else {
-        DEBUG_LOG("Tileset chargé avec succès!\n");
-    }
-}
-```
-
----
-
-### Problème 2: Erreur de compilation
-
-**Symptôme:** `error: 'getVisualTileAt' was not declared`
-
-**Cause:** Fichier header non inclus
-
-**Solution:**
-
-Vérifiez [include/state/GamePlayState.hpp](../include/state/GamePlayState.hpp):6:
-
-```cpp
-#include "../level/level2Data.h"  // Ajoutez cette ligne
-```
-
----
-
-### Problème 3: Les collisions ne fonctionnent pas
-
-**Symptôme:** Le joueur traverse les murs
-
-**Cause:** Couche `solid` vide ou mal configurée
-
-**Solution:**
-
-1. Ouvrez la map dans Tiled
-2. Vérifiez que la couche `solid` contient bien des tiles
-3. Vérifiez que les tiles utilisées ont les bons IDs (1-3 pour solides)
-4. Regénérez le fichier de données
-
-```bash
-~/hit_woker_tiled/hitwoker_tiled maps/level2.tmx > include/level/level2Data.h
-```
-
-**Vérification du fichier généré:**
-
-```bash
-# Chercher la table de lookup des tiles solides
-grep -A 5 "isSolidLookup" include/level/level2Data.h
-```
-
-Devrait afficher quelque chose comme:
-
-```cpp
-constexpr bool isSolidLookup[MAX_TILE_ID + 1] = {
-    false, true, true, true, false
+class LevelManager {
+public:
+    static LevelManager& instance();
+
+    const LevelData& getCurrentLevel() const;
+    bool loadLevel(int levelId);
+    bool loadNextLevel();
+    bool hasNextLevel() const;
 };
 ```
 
----
+### Flux de transition
 
-### Problème 4: Dimensions incorrectes
-
-**Symptôme:** `Erreur: Les dimensions doivent être paires`
-
-**Cause:** Map avec dimensions impaires (ex: 61×13)
-
-**Solution:**
-
-Dans Tiled:
-1. Map → Resize Map
-2. Ajustez à des dimensions paires: 60×12 ou 62×14
-
----
-
-### Problème 5: Couches manquantes
-
-**Symptôme:** `Erreur: Les 3 couches requises n'ont pas été trouvées`
-
-**Cause:** Noms de couches incorrects
-
-**Solution:**
-
-Les couches doivent s'appeler exactement:
-- `background` (ou `Background`)
-- `solid` (ou `Blocs solides`)
-- `kill` (ou `Blocs qui tuent`)
-
-Vérifiez dans Tiled que les 3 couches existent et sont bien nommées.
-
----
-
-### Problème 6: Segmentation fault au démarrage
-
-**Symptôme:** Crash immédiat
-
-**Cause possible:** Bitmap non chargée avant utilisation
-
-**Solution:**
-
-Vérifiez dans [src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp):37 que le check existe:
-
-```cpp
-void GamePlayState::render()
-{
-    // Vérifier que le tileset est chargé
-    if (!tileset) {
-        DEBUG_LOG("AVERTISSEMENT: Tileset non chargé!\n");
-        return;  // Ne rien dessiner
-    }
-
-    // ... reste du code de rendu
-}
 ```
+Boss meurt
+    |
+    v
+GamePlayState::onBossDefeated()
+    |
+    v
+isLevelTransitioning_ = true
+    |
+    v
+[Fade out - 1 seconde]
+    |
+    v
+LevelManager::loadNextLevel()
+Recharger tileset
+Reset player/camera/enemies
+    |
+    v
+[Fade in - 1 seconde]
+    |
+    v
+Gameplay reprend
+```
+
+---
+
+## Depannage
+
+### Probleme: Ecran noir apres transition
+
+**Cause:** Tileset manquant
+
+**Solution:**
+```bash
+# Verifier que le tileset existe
+ls asset/level/tileset/X.jpg
+
+# Creer/copier si manquant
+cp asset/level/tileset/1.jpg asset/level/tileset/X.jpg
+```
+
+### Probleme: "All levels completed! Victory!"
+
+**Cause:** `nextLevelId` du niveau precedent est -1
+
+**Solution:** Regenerer le niveau precedent avec `--next-level=N`
+
+### Probleme: Erreur de compilation "Level3 not found"
+
+**Cause:** Include manquant dans LevelManager.cpp
+
+**Solution:** Ajouter `#include "level/level3Data.h"`
+
+### Probleme: Crash au chargement
+
+**Cause:** `totalLevels_` non incremente
+
+**Solution:** Mettre a jour `totalLevels_ = X` dans `registerAllLevels()`
+
+### Probleme: Camera zones ne fonctionnent pas
+
+**Cause:** Proprietes manquantes dans Tiled
+
+**Solution:** Verifier que chaque zone a:
+- `zone_id` (int)
+- `next_zone_left/right/up/down` (int, -1 si aucune)
+- `zone_respawn` (bool)
 
 ---
 
 ## Checklist finale
 
-Avant de considérer votre niveau terminé, vérifiez:
-
 ### Fichiers
 
-- [ ] Tileset JPG créé: `asset/level/tileset/X.jpg`
-- [ ] Map TMX créée: `maps/levelX.tmx`
-- [ ] Fichier de données généré: `include/level/levelXData.h`
-- [ ] Header inclus dans `GamePlayState.hpp`
-
-### Map Tiled
-
-- [ ] Dimensions paires (60×12 ou multiples)
-- [ ] 3 couches créées: `background`, `solid`, `kill`
-- [ ] Tileset correctement lié
-- [ ] Tiles placées aux bons endroits
-- [ ] Sauvegardé au format TMX
-
-### Code
-
-- [ ] Tileset chargé correctement
-- [ ] Constantes de dimensions ajustées si nécessaire
-- [ ] Système de sélection de niveau implémenté (si multi-niveaux)
-- [ ] Compilation sans erreur
-- [ ] Aucun warning
+- [ ] Tileset cree: `asset/level/tileset/X.jpg`
+- [ ] Map Tiled creee avec 5 couches
+- [ ] Donnees generees: `include/level/levelXData.h`
+- [ ] Include ajoute dans `LevelManager.cpp`
+- [ ] Niveau enregistre dans `registerAllLevels()`
+- [ ] `totalLevels_` incremente
+- [ ] `nextLevelId` du niveau precedent mis a jour
 
 ### Tests
 
-- [ ] Le niveau s'affiche correctement
-- [ ] Les tiles sont aux bonnes positions
-- [ ] Les collisions fonctionnent (tiles solides)
-- [ ] Les zones mortelles tuent le joueur
-- [ ] La caméra scrolle sans bugs
-- [ ] Aucun crash pendant 5 minutes de jeu
-- [ ] Performance acceptable (60 FPS)
-
-### Debug
-
-- [ ] Mode DEBUG testé (grille visible)
-- [ ] Logs vérifiés (pas d'erreurs)
-- [ ] Mode RELEASE testé (production)
+- [ ] Compilation sans erreur
+- [ ] Tileset s'affiche correctement
+- [ ] Collisions fonctionnent
+- [ ] Camera zones fonctionnent
+- [ ] Transition depuis le niveau precedent fonctionne
+- [ ] Pas de crash pendant 5 minutes de jeu
 
 ---
 
-## Ressources complémentaires
+## Recapitulatif rapide
 
-### Documentation connexe
-
-- [hitwoker_tiled.md](hitwoker_tiled.md) - Outil de génération de map
-- [schema_compression_2d.md](schema_compression_2d.md) - Théorie de la compression
-
-### Fichiers importants
-
-- [include/state/GamePlayState.hpp](../include/state/GamePlayState.hpp) - Déclaration du state
-- [src/state/GamePlayState.cpp](../src/state/GamePlayState.cpp) - Implémentation du rendu/update
-- [include/level/level1Data.h](../include/level/level1Data.h) - Exemple de niveau existant
-- [include/utils/constant.h](../include/utils/constant.h) - Constantes du jeu
-
-### Outils
-
-- **Tiled Map Editor:** https://www.mapeditor.org/
-- **hitwoker_tiled:** `~/hit_woker_tiled/hitwoker_tiled`
-
----
-
-## Récapitulatif rapide
-
-**Pour ajouter le niveau 2 en 5 minutes:**
+**Pour ajouter le niveau 3:**
 
 ```bash
-# 1. Créer le tileset (dans GIMP/Photoshop)
-# Sauvegarder: asset/level/tileset/2.jpg
+# 1. Creer le tileset
+cp asset/level/tileset/1.jpg asset/level/tileset/3.jpg
 
-# 2. Créer la map dans Tiled
-# Map 60×12, 3 couches, dessiner le niveau
-# Sauvegarder: maps/level2.tmx
+# 2. Creer la map dans Tiled (5 couches, camera zones)
+# Sauvegarder: maps/level3.tmx
 
-# 3. Générer les données
-~/hit_woker_tiled/hitwoker_tiled maps/level2.tmx > include/level/level2Data.h
+# 3. Generer les donnees
+~/hit_woker_tiled/build/main maps/level3.tmx \
+    --level-id=3 --next-level=-1 --tileset="asset/level/tileset/3.jpg" \
+    > include/level/level3Data.h
 
-# 4. Modifier le code (changez currentLevel de 1 à 2)
-# include/state/GamePlayState.hpp:12
+# 4. Modifier LevelManager.cpp
+# - Ajouter #include "level/level3Data.h"
+# - Ajouter levels_[2] = &Level3::data;
+# - Mettre totalLevels_ = 3;
 
-# 5. Compiler et tester
-cd build
-make
-./hit_worker
+# 5. Mettre a jour level2Data.h si necessaire
+# - nextLevelId doit etre 3
+
+# 6. Compiler et tester
+cmake --build build && ./bin/hit_worker
 ```
-
-**Et voilà!** Votre nouveau niveau est prêt.
 
 ---
 
 **Auteur:** Hit Worker Team
-**Dernière mise à jour:** 2024-12-30
-**Version:** 1.0
-
-**Questions?** Consultez le [hitwoker_tiled.md](hitwoker_tiled.md) ou créez une issue.
+**Derniere mise a jour:** 2026-01-16
+**Version:** 2.0

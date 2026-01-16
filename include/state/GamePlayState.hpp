@@ -65,7 +65,13 @@ class GamePlayState: public AbstractState
             bool frameByFrameMode{false};      // Mode frame par frame activé/désactivé
             bool mKeyPreviouslyPressed{false}; // Pour détecter le toggle de M
             bool nextFrameKeyPreviouslyPressed{false}; // Pour détecter le toggle de RIGHT arrow
+            bool debugNextLevelPressed{false}; // Pour détecter le toggle de N (debug next level)
         #endif
+
+        // Level transition (Phase 5 - Dynamic Level Loading)
+        bool isLevelTransitioning_{false};
+        int levelTransitionTimer_{0};
+        static constexpr int LEVEL_TRANSITION_DURATION{120};  // 2 secondes a 60fps
 
 
     // ==== METHODE ====
@@ -79,8 +85,10 @@ class GamePlayState: public AbstractState
         void setCurrentLevel(int idLevel);
         void setTileset(std::string &filename);
         void resetToRespawn(int respawnZoneId, int playerLives);  // Reset le niveau au dernier respawn
+        void onBossDefeated();  // Appele quand le boss du niveau meurt
 
     private:
+        void updateLevelTransition();  // Gere la transition entre niveaux
         void detectZoneChange();          // Détecte si le joueur change de zone
         void changeZoneHorizontal(int newZoneId);  // Changement horizontal (instantané)
         void startVerticalTransition(int newZoneId, bool goingDown);  // Démarre scroll vertical
