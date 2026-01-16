@@ -75,6 +75,11 @@ struct LevelData {
 
     // Trouver la zone de caméra contenant le joueur
     [[nodiscard]] int findCameraZone(float playerX, float playerY) const noexcept;
+
+    // Obtenir l'ID de la zone boss (derniere zone du niveau)
+    [[nodiscard]] int getBossZoneId() const noexcept {
+        return numCameraZones - 1;
+    }
 };
 
 #endif // LEVEL_DATA_HPP
