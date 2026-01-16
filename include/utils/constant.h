@@ -34,6 +34,10 @@ constexpr int INVINCIBILITY_FRAMES{30};
 // Death & Respawn
 constexpr int DEATH_FADE_DURATION{120};  // 2 secondes à 60 FPS
 
+// Boss Transition
+constexpr int BOSS_TRANSITION_FADE_DURATION{120};  // 2 secondes
+constexpr int BOSS_TRANSITION_PAUSE_DURATION{50};  // ~0.8 seconde
+
 // Joueur
 constexpr int PLAYER_START_LIVES{4};
 constexpr int MAX_AMMO{255};  // Limite 1 octet

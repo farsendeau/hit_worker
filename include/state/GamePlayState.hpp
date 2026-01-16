@@ -86,6 +86,7 @@ class GamePlayState: public AbstractState
         void setTileset(std::string &filename);
         void resetToRespawn(int respawnZoneId, int playerLives);  // Reset le niveau au dernier respawn
         void onBossDefeated();  // Appele quand le boss du niveau meurt
+        void teleportToBossZone(int zoneId, float x, float y);   // Teleporte le joueur vers la zone boss
 
     private:
         void updateLevelTransition();  // Gere la transition entre niveaux
@@ -100,6 +101,9 @@ class GamePlayState: public AbstractState
         std::optional<ItemType> calculateDropType();  // Calcule quel type d'item dropper
 
         bool isInDeathSequence{false};    // Flag pour éviter double-push de DeathState
+
+        // Boss transition detection (Feature boss-transition, Plan 2)
+        bool checkBossTransitionTrigger(const InputState& input);  // Detection transition boss
 
     public:
         // Projectile management

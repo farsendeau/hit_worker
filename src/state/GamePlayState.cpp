@@ -1,5 +1,6 @@
 #include "state/GamePlayState.hpp"
 #include "state/DeathState.hpp"
+#include "state/BossTransitionState.hpp"
 #include "core/StateManager.hpp"
 #include "entity/DummyEnemy.hpp"
 #include "entity/Fioneur.hpp"
@@ -157,74 +158,87 @@ void GamePlayState::update(const InputState &input)
         return;
     }
 
-    // 3. Détection des transitions de zone
+    // 3. Detection de la transition boss (avant detection normale de zone)
+    // Conditions: joueur en zone N-1, input droite, au bord droit de la zone
+    if (checkBossTransitionTrigger(input)) {
+        return;  // Transition en cours, pas d'autre update
+    }
+
+    // 4. Détection des transitions de zone
     detectZoneChange();
 
-    // 4. Si une transition vient de commencer
+    // 5. Si une transition vient de commencer
     if (isTransitioning) {
         return;
     }
 
-    // 5. Mode normal: caméra suit le joueur horizontalement
+    // 6. Mode normal: caméra suit le joueur horizontalement
     const auto& lvl = LevelManager::instance().getCurrentLevel();
     const CameraZone& currentZone = lvl.cameraZones[currentZoneId];
 
-    // Suivre le joueur horizontalement
-    camera.follow(player);
-
-    // Limiter la caméra selon les zones adjacentes
-    // Si pas de zone à droite, bloquer au bord droit de la zone actuelle
-    float maxCameraX;
-    if (currentZone.next_zone_right >= 0) {
-        // Zone à droite existe, scrolling libre jusqu'au bout du niveau
-        maxCameraX = (lvl.mapWidthTiles * TILE_SIZE) - VIRTUAL_WIDTH;
+    // Vérifier si on est dans la zone boss (caméra verrouillée)
+    if (currentZoneId == lvl.getBossZoneId()) {
+        // Zone boss: caméra verrouillée, pas de follow
+        camera.setX(currentZone.x);
+        camera.setY(currentZone.y);
     } else {
-        // Pas de zone à droite, bloquer à cette zone
-        maxCameraX = currentZone.x + currentZone.width - VIRTUAL_WIDTH;
+        // Zones normales: caméra suit le joueur
+        camera.follow(player);
+
+        // Limiter la caméra selon les zones adjacentes
+        // Si pas de zone à droite, bloquer au bord droit de la zone actuelle
+        float maxCameraX;
+        if (currentZone.next_zone_right >= 0) {
+            // Zone à droite existe, scrolling libre jusqu'au bout du niveau
+            maxCameraX = (lvl.mapWidthTiles * TILE_SIZE) - VIRTUAL_WIDTH;
+        } else {
+            // Pas de zone à droite, bloquer à cette zone
+            maxCameraX = currentZone.x + currentZone.width - VIRTUAL_WIDTH;
+        }
+
+        // Si pas de zone à gauche, bloquer au bord gauche de la zone actuelle
+        float minCameraX;
+        if (currentZone.next_zone_left >= 0) {
+            // Zone à gauche existe, scrolling libre jusqu'au début
+            minCameraX = 0;
+        } else {
+            // Pas de zone à gauche, bloquer à cette zone
+            minCameraX = currentZone.x;
+        }
+
+        // Appliquer les limites
+        if (camera.getX() < minCameraX) camera.setX(minCameraX);
+        if (camera.getX() > maxCameraX) camera.setX(maxCameraX);
+
+        // Fixer Y à la position de la zone
+        camera.setY(currentZone.y);
     }
 
-    // Si pas de zone à gauche, bloquer au bord gauche de la zone actuelle
-    float minCameraX;
-    if (currentZone.next_zone_left >= 0) {
-        // Zone à gauche existe, scrolling libre jusqu'au début
-        minCameraX = 0;
-    } else {
-        // Pas de zone à gauche, bloquer à cette zone
-        minCameraX = currentZone.x;
-    }
-
-    // Appliquer les limites
-    if (camera.getX() < minCameraX) camera.setX(minCameraX);
-    if (camera.getX() > maxCameraX) camera.setX(maxCameraX);
-
-    // Fixer Y à la position de la zone
-    camera.setY(currentZone.y);
-
-    // 6. Update projectiles
+    // 7. Update projectiles
     updateProjectiles(input);
 
-    // 6.5. Update enemies
+    // 7.5. Update enemies
     updateEnemies(input);
 
-    // 6.6. Collision projectiles vs enemies
+    // 7.6. Collision projectiles vs enemies
     checkProjectileEnemyCollisions();
 
-    // 6.6b. Collision projectiles enemies vs player (Itération 4)
+    // 7.6b. Collision projectiles enemies vs player (Itération 4)
     checkEnemyProjectilePlayerCollisions();
 
-    // 6.7. Collision melee weapon vs enemies (Itération 3)
+    // 7.7. Collision melee weapon vs enemies (Itération 3)
     checkMeleeEnemyCollisions();
 
-    // 6.8. Collision player vs enemies - contact damage (Itération 3)
+    // 7.8. Collision player vs enemies - contact damage (Itération 3)
     checkPlayerEnemyCollisions();
 
-    // 6.9. Update items (Phase 5.5 - Item Drop System)
+    // 7.9. Update items (Phase 5.5 - Item Drop System)
     updateItems(input);
 
-    // 6.10. Collision player vs items (ramassage)
+    // 7.10. Collision player vs items (ramassage)
     checkPlayerItemCollisions();
 
-    // 7. Limiter le joueur aux bords de la zone
+    // 8. Limiter le joueur aux bords de la zone
     applyZoneBoundaries();
 }
 
@@ -1179,6 +1193,76 @@ void GamePlayState::onBossDefeated()
     DEBUG_LOG("Boss defeated! Starting level transition...\n");
     isLevelTransitioning_ = true;
     levelTransitionTimer_ = LEVEL_TRANSITION_DURATION;
+}
+
+// ============================================================
+// Boss Transition (Feature boss-transition, Plan 2)
+// ============================================================
+
+/**
+ * Detecte si les conditions de transition boss sont remplies
+ * Conditions: joueur en zone N-1, input droite presse, au bord droit de la zone
+ * @param input L'etat des inputs du joueur
+ * @return true si la transition a ete declenchee, false sinon
+ */
+bool GamePlayState::checkBossTransitionTrigger(const InputState& input)
+{
+    const auto& levelData = LevelManager::instance().getCurrentLevel();
+    int bossZoneId = levelData.getBossZoneId();
+    int preBossZoneId = bossZoneId - 1;
+
+    // Verifier si le joueur est dans la zone avant le boss
+    if (currentZoneId != preBossZoneId) {
+        return false;
+    }
+
+    // Verifier si l'input droite est presse
+    if (!input.right) {
+        return false;
+    }
+
+    // Verifier si le joueur est au bord droit de la zone (avec tolerance de 5 pixels)
+    const CameraZone& zone = levelData.cameraZones[currentZoneId];
+    float playerRight = player.getX() + player.getWidth();
+    float zoneRight = zone.x + zone.width;
+
+    if (playerRight < zoneRight - 5.0f) {
+        return false;  // Pas encore au bord
+    }
+
+    // Toutes les conditions sont remplies, declencher la transition
+    DEBUG_LOG("Boss transition triggered! Zone %d -> %d\n", currentZoneId, bossZoneId);
+
+    const CameraZone& bossZone = levelData.cameraZones[bossZoneId];
+    float targetX = bossZone.x + 20.0f;  // 20 pixels depuis le bord gauche
+    float targetY = player.getY();       // Meme hauteur
+
+    stateManager->push(new BossTransitionState(this, bossZoneId, targetX, targetY));
+    return true;
+}
+
+/**
+ * Teleporte le joueur vers la zone boss
+ * Appele par BossTransitionState pendant la phase TELEPORT
+ * @param zoneId ID de la zone boss
+ * @param x Position X de destination
+ * @param y Position Y de destination
+ */
+void GamePlayState::teleportToBossZone(int zoneId, float x, float y)
+{
+    DEBUG_LOG("Teleporting player to boss zone %d at (%.1f, %.1f)\n", zoneId, x, y);
+
+    // Teleporter le joueur
+    player.setX(x);
+    player.setY(y);
+
+    // Changer la zone courante
+    currentZoneId = zoneId;
+
+    // Positionner la camera sur la zone boss
+    const CameraZone& zone = LevelManager::instance().getCurrentLevel().cameraZones[zoneId];
+    camera.setX(zone.x);
+    camera.setY(zone.y);
 }
 
 /**
